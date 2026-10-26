@@ -1,0 +1,18 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: pipeline/cancel_trace
+value:
+  output:
+    route_to: retention_team
+  trace:
+    - index: 0
+      block: ExtractUserIntent
+      input_hash: b4f6ee8b23e7441b
+      output_hash: "1f1bc8aeb9db2e0b"
+    - index: 1
+      block: route
+      input_hash: "1f1bc8aeb9db2e0b"
+      output_hash: "4f6187a533e3af18"
+    - index: 2
+      block: format_output
+      input_hash: "4f6187a533e3af18"
+      output_hash: e3f2b0421bad627f

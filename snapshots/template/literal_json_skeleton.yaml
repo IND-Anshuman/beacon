@@ -1,0 +1,8 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/literal_json_skeleton
+input:
+  template: "{{\"query\": \"{q}\"}}"
+  variables:
+    q: rust
+value:
+  ok: "{\"query\": \"rust\"}"

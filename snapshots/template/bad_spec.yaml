@@ -1,0 +1,14 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/bad_spec
+input:
+  template: "{price:.2f}"
+  variables:
+    price: 1.5
+value:
+  error:
+    type: TemplateSyntaxError
+    code: template.format_spec
+    message: "format specs ('{name:...}') are not supported; format the value before passing it (line 1, column 7)"
+    position: 6
+    line: 1
+    column: 7

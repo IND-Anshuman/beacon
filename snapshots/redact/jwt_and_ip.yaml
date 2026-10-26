@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: redact/jwt_and_ip
+input: token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYmMifQ.c2lnbmF0dXJlX2hlcmU from 203.0.113.9
+value:
+  redacted:
+    ok: "token [REDACTED:jwt] from [REDACTED:ipv4]"
+  findings:
+    ok:
+      - label: jwt
+        start: 6
+        end: 65
+        text: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYmMifQ.c2lnbmF0dXJlX2hlcmU
+      - label: ipv4
+        start: 71
+        end: 82
+        text: "203.0.113.9"

@@ -1,0 +1,24 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: redact/support_ticket
+input: "Hi, I'm Jane (jane.doe@example.com, +1 415-555-0132). My card 4242 4242 4242 4242 was charged twice. SSN on file: 219-09-9999."
+value:
+  redacted:
+    ok: "Hi, I'm Jane ([REDACTED:email], [REDACTED:phone]. My card [REDACTED:credit_card] was charged twice. SSN on file: [REDACTED:ssn]."
+  findings:
+    ok:
+      - label: email
+        start: 14
+        end: 34
+        text: "jane.doe@example.com"
+      - label: phone
+        start: 36
+        end: 52
+        text: "+1 415-555-0132)"
+      - label: credit_card
+        start: 62
+        end: 81
+        text: "4242 4242 4242 4242"
+      - label: ssn
+        start: 114
+        end: 125
+        text: "219-09-9999"

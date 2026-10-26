@@ -1,0 +1,30 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: retry/backoff_schedule
+value:
+  default:
+    - 0.959
+    - 1.753
+    - 3.323
+    - 7.588
+    - 14.157
+    - 28.787
+    - 56.578
+    - 51.564
+  no_jitter:
+    - 1.0
+    - 2.0
+    - 4.0
+    - 8.0
+    - 16.0
+    - 30.0
+    - 30.0
+    - 30.0
+  keyed:
+    - 0.586
+    - 1.459
+    - 3.897
+    - 7.34
+    - 14.666
+    - 29.268
+    - 48.322
+    - 54.852

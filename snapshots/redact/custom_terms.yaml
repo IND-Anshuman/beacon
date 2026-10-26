@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: redact/custom_terms
+input: "Project Falcon launches; falcon team; Falconry club."
+value:
+  redacted:
+    ok: "[REDACTED:codename] launches; [REDACTED:codename] team; Falconry club."
+  findings:
+    ok:
+      - label: codename
+        start: 0
+        end: 14
+        text: Project Falcon
+      - label: codename
+        start: 25
+        end: 31
+        text: falcon

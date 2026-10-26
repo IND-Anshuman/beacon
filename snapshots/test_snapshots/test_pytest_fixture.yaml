@@ -1,0 +1,4 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: test_snapshots/test_pytest_fixture
+value:
+  fixture: works

@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/missing
+input:
+  template: "{a} {b}"
+  variables: {}
+value:
+  error:
+    type: MissingVariableError
+    code: template.missing_variable
+    message: "missing template variables: 'a', 'b'"
+    names:
+      - a
+      - b

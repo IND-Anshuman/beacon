@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/unicode_values
+input:
+  template: "{greeting}, {who}!"
+  variables:
+    greeting: Hola
+    who: "mundo 🌍"
+value:
+  ok: "Hola, mundo 🌍!"

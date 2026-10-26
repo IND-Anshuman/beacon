@@ -1,0 +1,8 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/raw_and_escaped
+input:
+  template: "{v} | {v!raw}"
+  variables:
+    v: "a < b && c > d"
+value:
+  ok: "a &lt; b &amp;&amp; c &gt; d | a < b && c > d"

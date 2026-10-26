@@ -1,0 +1,63 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: retry/status_table
+value:
+  "400":
+    action: fail
+    reason: bad_request
+    delay_seconds: 0.0
+  "401":
+    action: fail
+    reason: auth_error
+    delay_seconds: 0.0
+  "403":
+    action: fail
+    reason: auth_error
+    delay_seconds: 0.0
+  "404":
+    action: fail
+    reason: not_found
+    delay_seconds: 0.0
+  "408":
+    action: retry
+    reason: timeout
+    delay_seconds: 1.896
+  "409":
+    action: retry
+    reason: conflict
+    delay_seconds: 1.896
+  "413":
+    action: fail
+    reason: request_too_large
+    delay_seconds: 0.0
+  "418":
+    action: fail
+    reason: client_error
+    delay_seconds: 0.0
+  "422":
+    action: fail
+    reason: bad_request
+    delay_seconds: 0.0
+  "429":
+    action: retry
+    reason: rate_limit
+    delay_seconds: 1.896
+  "500":
+    action: retry
+    reason: server_error
+    delay_seconds: 1.896
+  "502":
+    action: retry
+    reason: server_error
+    delay_seconds: 1.896
+  "503":
+    action: retry
+    reason: overloaded
+    delay_seconds: 1.896
+  "504":
+    action: retry
+    reason: server_error
+    delay_seconds: 1.896
+  "529":
+    action: retry
+    reason: overloaded
+    delay_seconds: 1.896

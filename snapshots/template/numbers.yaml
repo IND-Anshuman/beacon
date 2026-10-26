@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/numbers
+input:
+  template: "{i}/{f}/{b}"
+  variables:
+    i: -1
+    f: 1.0e-07
+    b: false
+value:
+  ok: "-1/1e-07/False"

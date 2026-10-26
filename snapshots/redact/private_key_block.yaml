@@ -1,0 +1,23 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: redact/private_key_block
+input: |-
+  config:
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  b3BlbnNzaC1rZXktdjEAAAAA
+  -----END OPENSSH PRIVATE KEY-----
+  done
+value:
+  redacted:
+    ok: |-
+      config:
+      [REDACTED:private_key]
+      done
+  findings:
+    ok:
+      - label: private_key
+        start: 8
+        end: 102
+        text: |-
+          -----BEGIN OPENSSH PRIVATE KEY-----
+          b3BlbnNzaC1rZXktdjEAAAAA
+          -----END OPENSSH PRIVATE KEY-----

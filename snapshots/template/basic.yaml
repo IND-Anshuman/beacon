@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/basic
+input:
+  template: "Hello {name}, your order #{order_id} is ready."
+  variables:
+    name: Alice
+    order_id: 12345
+value:
+  ok: "Hello Alice, your order #12345 is ready."

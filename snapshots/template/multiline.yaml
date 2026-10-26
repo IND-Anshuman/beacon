@@ -1,0 +1,15 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/multiline
+input:
+  template: |
+    System: {sys}
+
+    User: {user}
+  variables:
+    sys: Be terse.
+    user: Hi
+value:
+  ok: |
+    System: Be terse.
+
+    User: Hi

@@ -1,0 +1,14 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/extra
+input:
+  template: "{a}"
+  variables:
+    a: "1"
+    zzz: "2"
+value:
+  error:
+    type: ExtraVariableError
+    code: template.extra_variable
+    message: "unused template variable: 'zzz'"
+    names:
+      - zzz

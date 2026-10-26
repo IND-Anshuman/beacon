@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: template/unmatched
+input:
+  template: "Use } carefully"
+  variables: {}
+value:
+  error:
+    type: TemplateSyntaxError
+    code: template.unmatched_close
+    message: "single '}' is not allowed; write '}}' for a literal brace (line 1, column 5)"
+    position: 4
+    line: 1
+    column: 5

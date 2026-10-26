@@ -1,0 +1,8 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: redact/near_misses
+input: "Order 2024-01-15, v1.2.3, ticket #555123, 1234-5678-9012-3456, 000-12-3456, user@localhost"
+value:
+  redacted:
+    ok: "Order 2024-01-15, v1.2.3, ticket #555123, 1234-5678-9012-3456, 000-12-3456, user@localhost"
+  findings:
+    ok: []
