@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/json_in_sentence_with_braces
+input: "Use the {} operator. {\"op\": \"{}\"}"
+value:
+  ok:
+    value: {}
+    start: 8
+    end: 10
+    source: inline
+    candidates: 2

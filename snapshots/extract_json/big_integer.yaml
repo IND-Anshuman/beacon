@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/big_integer
+input: "{\"id\": 123456789012345678901234567890}"
+value:
+  ok:
+    value:
+      id: 123456789012345678901234567890
+    start: 0
+    end: 38
+    source: whole
+    candidates: 1

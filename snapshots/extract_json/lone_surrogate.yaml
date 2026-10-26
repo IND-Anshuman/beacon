@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/lone_surrogate
+input: "{\"s\": \"\\udc00\"}"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.lone_surrogate
+    message: "unpaired surrogate in \\u escape (line 1, column 8)"
+    position: 7
+    line: 1
+    column: 8

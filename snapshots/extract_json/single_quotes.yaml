@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/single_quotes
+input: "{'intent': 'cancel'}"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.expected_key
+    message: "expected a double-quoted object key, found \"'\" (line 1, column 2)"
+    position: 1
+    line: 1
+    column: 2

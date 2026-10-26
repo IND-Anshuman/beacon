@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/deeply_nested
+input: "{\"a\": {\"b\": {\"c\": {\"d\": {\"e\": [[[1]]]}}}}}"
+value:
+  ok:
+    value:
+      a:
+        b:
+          c:
+            d:
+              e:
+                - - - 1
+    start: 0
+    end: 42
+    source: whole
+    candidates: 1

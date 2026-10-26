@@ -1,0 +1,14 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/tilde_fence
+input: |-
+  ~~~json
+  {"ok": true}
+  ~~~
+value:
+  ok:
+    value:
+      ok: true
+    start: 8
+    end: 20
+    source: fence
+    candidates: 1

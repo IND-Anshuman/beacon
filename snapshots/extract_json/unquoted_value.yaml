@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/unquoted_value
+input: "The user wants to {\"intent\": cancel"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.expected_value
+    message: "expected a JSON value, found 'c' (line 1, column 30)"
+    position: 29
+    line: 1
+    column: 30

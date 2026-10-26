@@ -1,0 +1,22 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: validate_schema/optional_nested
+input:
+  instance:
+    user:
+      age: x
+  schema:
+    properties:
+      user:
+        anyOf:
+          - "$ref": "#/$defs/U"
+          - type: "null"
+    "$defs":
+      U:
+        properties:
+          age:
+            type: integer
+value:
+  ok:
+    - path: "/user/age"
+      keyword: type
+      message: "expected type \"integer\", got \"string\""

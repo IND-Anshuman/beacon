@@ -1,0 +1,18 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/two_fences
+input: |-
+  ```json
+  {"a": 1}
+  ```
+  and
+  ```json
+  {"b": 2}
+  ```
+value:
+  ok:
+    value:
+      a: 1
+    start: 8
+    end: 16
+    source: fence
+    candidates: 2

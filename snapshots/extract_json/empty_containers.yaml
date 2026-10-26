@@ -1,0 +1,12 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/empty_containers
+input: "{\"a\": {}, \"b\": []}"
+value:
+  ok:
+    value:
+      a: {}
+      b: []
+    start: 0
+    end: 18
+    source: whole
+    candidates: 1

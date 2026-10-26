@@ -1,0 +1,12 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/trailing_prose_basic
+input: "The result is {\"intent\": \"cancel\", \"confidence\": 0.9}. Let me know if you need more."
+value:
+  ok:
+    value:
+      intent: cancel
+      confidence: 0.9
+    start: 14
+    end: 53
+    source: inline
+    candidates: 1

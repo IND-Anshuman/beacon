@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: validate_schema/one_of_ambiguous
+input:
+  instance: 3
+  schema:
+    oneOf:
+      - minimum: 0
+      - maximum: 10
+value:
+  ok:
+    - path: ""
+      keyword: oneOf
+      message: "value matches more than one subschema in oneOf (indices 0 and 1)"

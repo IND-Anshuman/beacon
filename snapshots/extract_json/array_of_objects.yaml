@@ -1,0 +1,12 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/array_of_objects
+input: "[{\"id\": 1}, {\"id\": 2}]"
+value:
+  ok:
+    value:
+      - id: 1
+      - id: 2
+    start: 0
+    end: 22
+    source: whole
+    candidates: 1

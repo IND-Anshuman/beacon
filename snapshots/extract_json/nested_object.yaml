@@ -1,0 +1,14 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/nested_object
+input: "Output: {\"user\": {\"name\": \"Alice\", \"prefs\": {\"theme\": \"dark\"}}}"
+value:
+  ok:
+    value:
+      user:
+        name: Alice
+        prefs:
+          theme: dark
+    start: 8
+    end: 63
+    source: inline
+    candidates: 1

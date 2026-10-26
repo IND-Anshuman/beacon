@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/citations_then_object
+input: "Per [1], [2] and [3]: {\"answer\": 42}"
+value:
+  ok:
+    value:
+      answer: 42
+    start: 22
+    end: 36
+    source: inline
+    candidates: 1

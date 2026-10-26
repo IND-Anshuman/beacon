@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/unclosed_fence_truncated
+input: |-
+  ```json
+  {"ok": tr
+value:
+  error:
+    type: MalformedOutputError
+    code: json.unexpected_end
+    message: "unexpected end of input (line 2, column 10)"
+    position: 17
+    line: 2
+    column: 10

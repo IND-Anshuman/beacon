@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: validate_schema/strict_object
+input:
+  instance:
+    a: 1
+    extra: true
+  schema:
+    type: object
+    properties:
+      a: {}
+    additionalProperties: false
+value:
+  ok:
+    - path: ""
+      keyword: additionalProperties
+      message: "additional property \"extra\" is not allowed"

@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/template_braces_then_json
+input: "Fill {name} and {date}. Data: {\"filled\": true}"
+value:
+  ok:
+    value:
+      filled: true
+    start: 30
+    end: 46
+    source: inline
+    candidates: 1

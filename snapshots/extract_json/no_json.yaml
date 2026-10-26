@@ -1,0 +1,8 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/no_json
+input: I could not determine the intent.
+value:
+  error:
+    type: NoJSONFoundError
+    code: json.not_found
+    message: no JSON object or array found in text

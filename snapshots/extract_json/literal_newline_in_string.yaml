@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/literal_newline_in_string
+input: |-
+  {"text": "line1
+  line2"}
+value:
+  error:
+    type: MalformedOutputError
+    code: json.control_character
+    message: "unescaped control character U+000A in string (line 1, column 16)"
+    position: 15
+    line: 1
+    column: 16

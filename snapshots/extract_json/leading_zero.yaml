@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/leading_zero
+input: "{\"n\": 007}"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.invalid_number
+    message: "invalid number (line 1, column 7)"
+    position: 6
+    line: 1
+    column: 7

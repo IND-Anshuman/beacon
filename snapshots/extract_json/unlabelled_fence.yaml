@@ -1,0 +1,15 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/unlabelled_fence
+input: |-
+  Sure:
+  ```
+  {"ok": true}
+  ```
+value:
+  ok:
+    value:
+      ok: true
+    start: 10
+    end: 22
+    source: fence
+    candidates: 1

@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/bare_array
+input: "[\"a\", \"b\", \"c\"]"
+value:
+  ok:
+    value:
+      - a
+      - b
+      - c
+    start: 0
+    end: 15
+    source: whole
+    candidates: 1

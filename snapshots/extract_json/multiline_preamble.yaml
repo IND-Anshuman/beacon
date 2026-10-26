@@ -1,0 +1,20 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/multiline_preamble
+input: |-
+  Thinking...
+  Step 1: parse.
+  Step 2: answer.
+
+  {"intent": "question",
+   "confidence": 0.42}
+
+  Done.
+value:
+  ok:
+    value:
+      intent: question
+      confidence: 0.42
+    start: 44
+    end: 87
+    source: inline
+    candidates: 1

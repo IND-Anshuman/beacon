@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/multiple_objects
+input: "{\"a\": 1} and then {\"b\": 2}"
+value:
+  ok:
+    value:
+      a: 1
+    start: 0
+    end: 8
+    source: inline
+    candidates: 2

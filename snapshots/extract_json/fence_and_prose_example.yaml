@@ -1,0 +1,15 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/fence_and_prose_example
+input: |-
+  E.g. {"x": 0}
+  ```json
+  {"real": 1}
+  ```
+value:
+  ok:
+    value:
+      real: 1
+    start: 22
+    end: 33
+    source: fence
+    candidates: 1

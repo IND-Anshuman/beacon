@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/duplicate_keys
+input: "{\"a\": 1, \"a\": 2}"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.duplicate_key
+    message: "duplicate object key \"a\" (line 1, column 10)"
+    position: 9
+    line: 1
+    column: 10

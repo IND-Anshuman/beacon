@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/comment_in_json
+input: |-
+  {"a": 1 // one
+  }
+value:
+  error:
+    type: MalformedOutputError
+    code: json.expected_comma
+    message: "expected ',' or '}' after object value, found '/' (line 1, column 9)"
+    position: 8
+    line: 1
+    column: 9

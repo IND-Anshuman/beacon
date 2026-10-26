@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/python_literals
+input: "{\"ok\": True, \"v\": None}"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.expected_value
+    message: "expected a JSON value, found 'T' (line 1, column 8)"
+    position: 7
+    line: 1
+    column: 8

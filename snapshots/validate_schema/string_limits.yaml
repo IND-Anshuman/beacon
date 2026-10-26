@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: validate_schema/string_limits
+input:
+  instance: toolongvalue
+  schema:
+    type: string
+    maxLength: 5
+    pattern: "^[0-9]+$"
+value:
+  ok:
+    - path: ""
+      keyword: maxLength
+      message: "string has 12 characters, more than the maximum of 5"
+    - path: ""
+      keyword: pattern
+      message: "string does not match the pattern \"^[0-9]+$\""

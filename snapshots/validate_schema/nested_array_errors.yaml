@@ -1,0 +1,33 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: validate_schema/nested_array_errors
+input:
+  instance:
+    items:
+      - sku: A1
+        qty: 0
+      - sku: 5
+        qty: 2
+  schema:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          properties:
+            sku:
+              type: string
+            qty:
+              type: integer
+              minimum: 1
+          required:
+            - sku
+            - qty
+value:
+  ok:
+    - path: "/items/0/qty"
+      keyword: minimum
+      message: "0 is less than the minimum of 1"
+    - path: "/items/1/sku"
+      keyword: type
+      message: "expected type \"string\", got \"integer\""

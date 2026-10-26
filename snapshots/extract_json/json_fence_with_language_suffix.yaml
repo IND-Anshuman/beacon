@@ -1,0 +1,14 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/json_fence_with_language_suffix
+input: |-
+  ```json title="out"
+  {"a": 1}
+  ```
+value:
+  ok:
+    value:
+      a: 1
+    start: 20
+    end: 28
+    source: fence
+    candidates: 1

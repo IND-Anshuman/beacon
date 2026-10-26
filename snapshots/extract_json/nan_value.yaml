@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/nan_value
+input: "{\"score\": NaN}"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.expected_value
+    message: "expected a JSON value, found 'N' (line 1, column 11)"
+    position: 10
+    line: 1
+    column: 11
