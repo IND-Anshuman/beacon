@@ -1,0 +1,86 @@
+---
+title: Determinism guarantees
+description: The formal contract. If beacon behaves differently from this page, it is a bug.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<span class="beacon-eyebrow">The contract</span>
+
+This page is the contract. If beacon behaves differently from what is written here, that is a bug. Please [report it](https://github.com/IND-Anshuman/beacon/issues).
+
+## 1. Pure functions
+
+Every block (`template`, `template_variables`, `extract_json`, `extract_json_detailed`, `parse_tool_call`, `parse_tool_calls`, `validate_schema`, `schema_errors`, `normalize`, `hash_content`, `redact`, `detect_pii`, `retry.classify`, `retry.backoff_delay`) is a pure function:
+
+- Same arguments → same return value, or the same exception with the same message and attributes.
+- No hidden state: no caches, no counters, no global configuration.
+- No I/O: blocks never read files, the network, the clock, environment variables or the system locale.
+- No randomness. Retry jitter is derived from a hash of an explicit `jitter_key` and the attempt number.
+
+The first call returns exactly what the thousandth does. Built-in regular expressions are compiled once on first use, and that compilation cannot affect results.
+
+## 2. Stable across runs and machines
+
+For a given beacon version, every block's output is byte-identical across runs, processes, Python versions (3.10–3.14), operating systems, CPU architectures and locales. How:
+
+- All block logic runs in Rust; Python only converts arguments.
+- Positions reported to Python count **Unicode code points**, never bytes.
+- JSON numbers are parsed with correctly rounded IEEE-754 conversion; integers of any size stay exact `int`s.
+- `hash_content` hashes a type-tagged canonical encoding, never `repr()` or `json.dumps()`.
+- Retry delays are computed in integer milliseconds.
+- Unicode tables come from pinned crate versions. The Unicode version (`beacon.UNICODE_VERSION`) only changes in a minor release and is recorded in the changelog.
+
+beacon's CI checks this directly. The same 111 golden snapshot files must match **byte for byte** on Linux, macOS and Windows, on Python 3.10 to 3.14, and under `LANG=C`. A cross-process test also runs every block in fresh interpreters with different `PYTHONHASHSEED`s and requires identical output.
+
+## 3. Stable across versions
+
+| Release | What may change |
+| --- | --- |
+| **Patch** (0.1.x → 0.1.y) | Nothing observable: no block output changes for any input, including exception types, codes and messages. |
+| **Minor** (0.1 → 0.2) | New parameters, error codes, formats or detectors. A call that succeeded still returns the same value; a snapshot written under 0.X matches under 0.(X+1). Any exception (such as a newly recognised tool-call format turning an error into a success) is listed under "Behaviour changes" in the changelog. |
+| **Major** | Anything, with a migration note. |
+
+## 4. Stable error messages
+
+Exception classes, `code` attributes and message text are part of the contract, under the same rules as section 3. Messages never contain timestamps, memory addresses, hash-randomised orderings or absolute paths. When several problems are reported at once (missing template variables, schema violations) they come in a documented, fixed order.
+
+## 5. Explicit configuration
+
+Every option that affects output is a named parameter with a documented default. No global flags, no environment variables.
+
+<Aside type="note">
+The snapshot **test harness** reads `BEACON_SNAPSHOT_MODE` and `CI` to decide whether a missing snapshot is written or fails the test. That changes what the harness does with files, never what a block returns.
+</Aside>
+
+## 6. Fail loudly
+
+Blocks never silently repair input:
+
+- `extract_json` accepts strict RFC 8259 JSON only.
+- `validate_schema` never coerces types and raises `SchemaError` for keywords it doesn't implement, rather than ignoring them.
+- `template` raises on missing variables (and, in strict mode, unused ones).
+- `parse_tool_call` raises when it finds no call, or more than one.
+
+## Canonical encoding of `hash_content`
+
+`hash_content(value)` is `blake3(encode(value))` in lowercase hex, truncated to `length` characters (default 16):
+
+| Python value | Encoding |
+| --- | --- |
+| `None` | `n` |
+| `True` / `False` | `t` / `f` |
+| `int` | `i` + decimal digits (with `-` if negative) + `;` |
+| `float` | `d` + 8 bytes IEEE-754 big-endian; all NaNs encode as `0x7ff8000000000000` |
+| `str` | `s` + UTF-8 byte length (u64 BE) + UTF-8 bytes |
+| `bytes` | `b` + length (u64 BE) + raw bytes |
+| `list` / `tuple` | `l` + item count (u64 BE) + encoded items in order |
+| `dict` (str keys) | `m` + entry count (u64 BE) + (key, value) pairs sorted by the key's UTF-8 bytes |
+
+So `{"a": 1, "b": 2}` and `{"b": 2, "a": 1}` hash equal; `[1, 2]` and `[2, 1]` don't; `1`, `1.0`, `True` and `"1"` all differ; `0.0` and `-0.0` differ; lists and tuples with the same items hash equal. The encoding is versioned (v1), and changing it is a major-version change.
+
+## What is *not* guaranteed
+
+- **The LLM itself.** beacon makes everything around the model deterministic so that the model is the only moving part.
+- **Your pipeline code.** `Pipeline` and `Block` are only as deterministic as the code inside them.
+- **Wall-clock time in `retry.call`.** The decisions and delays are deterministic; the sleeping isn't.

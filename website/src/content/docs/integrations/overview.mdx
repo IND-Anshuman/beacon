@@ -1,0 +1,26 @@
+---
+title: Integrations
+description: beacon inside the OpenAI SDK, LangChain, LlamaIndex, Pydantic AI and DSPy.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+All integrations are optional. `import beacon` never imports a framework; each integration module imports its framework only when you use it.
+
+| Framework | Install | Main API |
+| --- | --- | --- |
+| OpenAI SDK | none (duck-typed) | `validated_completion`, `avalidated_completion`, `validated_tool_call` |
+| LangChain | `pip install "llm-beacon[langchain]"` | `BeaconPromptTemplate`, `BeaconJsonOutputParser`, `BeaconCallbackHandler` |
+| LlamaIndex | `pip install "llm-beacon[llamaindex]"` | `BeaconOutputParser` |
+| Pydantic AI | optional | `BeaconValidator` |
+| DSPy | `pip install "llm-beacon[dspy]"` | `BeaconJSONAdapter`, `BeaconValidateSchema` |
+
+Tested against openai 2.x, langchain-core 1.x, llama-index-core 0.14, pydantic-ai 2.x and dspy 3.x. Every integration has tests with fake clients (always run) and with the real library (run when it's installed).
+
+<CardGrid>
+  <LinkCard title="OpenAI SDK" href="../openai/" description="Validated completions, sync and async, plus tool calls." />
+  <LinkCard title="LangChain" href="../langchain/" description="Prompt template, output parser and callback handler." />
+  <LinkCard title="LlamaIndex" href="../llamaindex/" description="A strict output parser for query engines." />
+  <LinkCard title="Pydantic AI" href="../pydantic-ai/" description="Output validation with precise ModelRetry feedback." />
+  <LinkCard title="DSPy" href="../dspy/" description="A strict JSON adapter and a schema-validating module." />
+</CardGrid>

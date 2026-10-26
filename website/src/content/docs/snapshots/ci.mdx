@@ -1,0 +1,64 @@
+---
+title: CI & modes
+description: How snapshot modes are chosen, line endings, and a GitHub Actions setup.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## How the mode is chosen
+
+The first match wins:
+
+1. `mode=` argument, or `beacon.snapshots.configure(mode=...)`
+2. `pytest --beacon-snapshot=new|check|update`
+3. `BEACON_SNAPSHOT_MODE` environment variable
+4. `check` if `CI` is set (to anything but `0`/`false`/`no`), otherwise `new`
+
+So on GitHub Actions, GitLab CI and most other providers (which set `CI=true`), a missing snapshot fails the build. You can't forget to commit one.
+
+<Aside type="note">
+These settings only change what the test harness does with files. Block output never depends on them.
+</Aside>
+
+## Line endings
+
+Snapshots are compared byte for byte, so stop git from rewriting them on Windows checkouts:
+
+```text title=".gitattributes"
+snapshots/** text eol=lf
+```
+
+beacon tolerates CRLF when reading, but always writes LF.
+
+## GitHub Actions
+
+```yaml title=".github/workflows/test.yml"
+name: tests
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e . llm-beacon pytest
+      - run: pytest        # CI=true → snapshot mode "check"
+```
+
+Running the same snapshots on all three operating systems is the strongest determinism test you can have. beacon's own CI does exactly this for its 111 golden files.
+
+## Reviewing changes
+
+When a snapshot changes intentionally:
+
+```bash
+python -m beacon.snapshots update
+git diff snapshots/
+```
+
+Read the diff before committing. It's a precise record of how your app's behaviour changed.

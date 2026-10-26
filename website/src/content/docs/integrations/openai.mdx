@@ -1,0 +1,64 @@
+---
+title: OpenAI SDK
+description: Validated completions for the raw OpenAI client, sync and async, plus strict tool-call parsing.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+No extra dependency: the client is duck-typed, so the official SDK, Azure OpenAI, vLLM, LiteLLM proxies and test fakes all work.
+
+```python
+from openai import OpenAI
+from beacon.integrations.openai_sdk import validated_completion
+
+client = OpenAI()
+result = validated_completion(
+    client,
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Classify: I want to cancel"}],
+    schema={"type": "object", "properties": {"intent": {"type": "string"}}, "required": ["intent"]},
+)
+# -> {'intent': 'cancel'}
+```
+
+## Async
+
+```python
+from openai import AsyncOpenAI
+from beacon.integrations.openai_sdk import avalidated_completion
+
+result = await avalidated_completion(AsyncOpenAI(), model="gpt-4o", messages=msgs, output_model=Intent)
+# -> Intent(intent='cancel', confidence=0.93)
+```
+
+## Options
+
+| Parameter | Meaning |
+| --- | --- |
+| `schema` | JSON Schema to validate against; defaults to `output_model.model_json_schema()` |
+| `output_model` | Pydantic model class to build from the JSON |
+| `select`, `kind` | passed to [`extract_json`](../../blocks/extract-json/) |
+| `create` | use another endpoint, e.g. `create=client.responses.create` (reads `output_text`) |
+| `**kwargs` | forwarded to the create call unchanged |
+
+## Failures
+
+- No JSON, malformed JSON or schema violations raise `MalformedOutputError` / `SchemaValidationError`, with **`.raw` set to the model text**.
+- A refusal or empty content raises `MalformedOutputError` with code `openai.no_content`.
+
+## Tool calls
+
+```python
+from beacon.integrations.openai_sdk import validated_tool_call
+
+calls = validated_tool_call(response, tool_schemas={
+    "get_weather": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]},
+})
+# -> [{'name': 'get_weather', 'arguments': {'city': 'Paris'}}]
+```
+
+Native `message.tool_calls` are used when present, and their JSON-string arguments are parsed **strictly**. Otherwise tool calls are parsed from the message text with [`parse_tool_calls`](../../blocks/parse-tool-call/), which covers models that write calls as text. With `tool_schemas`, each call's arguments are validated, and a call to an unknown tool raises `openai.unknown_tool`.
+
+<Aside type="tip">
+Combine with [`retry.call`](../../blocks/retry/) to retry transient API errors with deterministic backoff, and re-prompt with the stable error message on validation failures.
+</Aside>

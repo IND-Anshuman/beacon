@@ -1,0 +1,45 @@
+---
+title: LlamaIndex
+description: A strict, deterministic output parser for LlamaIndex query engines.
+---
+
+```bash
+pip install "llm-beacon[llamaindex]"
+```
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.output_parsers import PydanticOutputParser
+from pydantic import BaseModel
+from beacon.integrations.llamaindex import BeaconOutputParser
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: list[str]
+    confidence: float
+
+index = VectorStoreIndex.from_documents(SimpleDirectoryReader("data").load_data())
+parser = BeaconOutputParser(PydanticOutputParser(QueryResponse))
+query_engine = index.as_query_engine(output_parser=parser)
+```
+
+The parser sits between LlamaIndex's response synthesizer and your code:
+
+- **`format()`** delegates to the wrapped parser, so LlamaIndex's format instructions still reach the model.
+- **`parse()`** uses beacon's strict extraction and validation instead of lenient JSON scraping, and returns a `QueryResponse`.
+
+`BeaconOutputParser` subclasses LlamaIndex's `BaseOutputParser`. Construct it in any of these ways:
+
+```python
+BeaconOutputParser(PydanticOutputParser(QueryResponse))   # reuse output_cls + format()
+BeaconOutputParser(output_cls=QueryResponse)
+BeaconOutputParser(json_schema={"type": "object", "required": ["answer"]})   # returns dicts
+```
+
+Failures raise `MalformedOutputError` or `SchemaValidationError` with `.raw` set to the synthesized text:
+
+```python
+>>> parser.parse('{"answer": "30 days", "sources": "refunds.md", "confidence": 0.86}')
+SchemaValidationError: 1 schema violation:
+  - /sources: expected type "array", got "string"
+```

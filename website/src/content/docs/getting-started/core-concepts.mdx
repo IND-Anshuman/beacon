@@ -1,0 +1,89 @@
+---
+title: Core concepts
+description: Pure blocks, strict contracts, stable errors, and where the model fits.
+---
+
+import { Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+Four ideas explain almost everything about beacon.
+
+## 1. Blocks are pure functions
+
+A block is a plain function. Given the same arguments, it returns the same value, or raises the same exception with the same message. Nothing else influences the result:
+
+| beacon never reads… | Why |
+| --- | --- |
+| the clock | a timestamp in an error would make snapshots unportable |
+| environment variables | hidden config would make tests behave differently on another machine |
+| the system locale | `"İ".lower()` must not depend on where the code runs |
+| files or the network | blocks have no I/O at all |
+| random numbers | retry jitter is derived from a hash instead |
+| previous calls | no caches, no counters, no lazy state that changes results |
+
+Every option that affects output is a named parameter with a documented default.
+
+## 2. Contracts are strict, and nothing is silently fixed
+
+beacon follows one rule: **valid input succeeds; anything else raises, with a position.**
+
+- `extract_json` accepts strict RFC 8259 JSON. No trailing commas, comments, single quotes or `NaN`.
+- `validate_schema` never coerces: `"42"` is not a number, and `True` is not an integer.
+- `template` refuses missing variables and, by default, unused ones.
+- `parse_tool_call` raises when it finds no call, or more than one.
+
+"Repair" modes look convenient, but they turn model mistakes into silently wrong data. beacon makes the mistake visible and leaves the decision to you, for example re-prompting with the error message.
+
+## 3. Errors are part of the API
+
+Every exception carries a stable `code` and a stable message:
+
+```python
+try:
+    extract_json('{"intent": "cancel",}')
+except MalformedOutputError as err:
+    err.code      # 'json.trailing_comma'
+    err.position  # 20  (a code-point index, like Python str indexing)
+    err.line, err.column  # (1, 21)
+    str(err)      # "trailing comma before '}' (line 1, column 21)"
+```
+
+Codes and messages never change in a patch release. That means you can:
+
+- **snapshot-test error behaviour**, and those tests won't break on upgrade;
+- **feed errors back to the model**, and it gets the same correction every time;
+- **branch on `err.code`** instead of matching message strings.
+
+See [Errors](../../guarantees/errors/) for the exception hierarchy and [Error codes](../../reference/error-codes/) for the full list.
+
+## 4. The model is the only moving part
+
+beacon doesn't make the LLM deterministic; nothing can. It makes everything **around** the model deterministic, so you can test that part with recorded responses:
+
+<CardGrid>
+  <Card title="Deterministic" icon="approve-check">
+    Prompt rendering · parsing · validation · normalization · hashing · redaction · retry decisions · your own pipeline logic
+  </Card>
+  <Card title="Not deterministic" icon="warning">
+    The model's response. Record it once, then replay it in tests.
+  </Card>
+</CardGrid>
+
+<Aside type="note" title="Positions are code points">
+Every offset beacon reports (`position`, `start`, `end`) counts Unicode code points, exactly like indexing a Python `str`. `text[err.position]` is always the offending character, even with emoji or CJK text before it.
+</Aside>
+
+## The pieces
+
+```text
+            your code
+                │
+   ┌────────────┼──────────────────────────────┐
+   │ template ──► LLM ──► extract_json / parse_tool_call
+   │                         │
+   │                 validate_schema ──► your logic
+   │                         │
+   │   normalize · hash_content · redact · retry (around it all)
+   └────────────┼──────────────────────────────┘
+                │
+     snapshot tests lock in the behaviour
+```

@@ -1,0 +1,81 @@
+---
+title: retry
+description: Deterministic retry classification with typed decisions and hash-derived jitter.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Playground from '../../../components/Playground.astro';
+
+`retry` decides what to do after a failed model call: retry (and when) or fail. The same exception always gets the same decision, and the backoff jitter comes from a hash instead of a random number generator.
+
+```python
+retry.classify(error, *, attempt=1, policy=RetryPolicy()) -> RetryDecision
+retry.backoff_delay(attempt, *, policy=RetryPolicy()) -> float
+retry.call(fn, *args, policy=..., sleep=time.sleep, on_retry=None, **kwargs)
+```
+
+```python
+>>> from beacon import retry
+>>> retry.classify(openai.RateLimitError(...))
+RetryDecision(action=<RetryAction.RETRY>, reason=<RetryReason.RATE_LIMIT>, delay_seconds=0.959, attempt=1, retryable=True)
+>>> retry.classify(openai.AuthenticationError(...))
+RetryDecision(action=<RetryAction.FAIL>, reason=<RetryReason.AUTH_ERROR>, delay_seconds=0.0, ...)
+```
+
+## Try it
+
+<Playground ops={['retry']} />
+
+## Classification
+
+Checked in this fixed order:
+
+1. **HTTP status code**, read from `status_code`, `status`, `http_status` or `response.status_code` (or pass a bare `int`):
+
+   | Status | Reason | Retried |
+   | --- | --- | --- |
+   | 429 | `rate_limit` | yes |
+   | 503, 529 | `overloaded` | yes |
+   | other 5xx | `server_error` | yes |
+   | 408 | `timeout` | yes |
+   | 409 | `conflict` | yes |
+   | 401, 403 | `auth_error` | no |
+   | 400, 422 | `bad_request` | no |
+   | 404 | `not_found` | no |
+   | 413 | `request_too_large` | no |
+   | other 4xx | `client_error` | no |
+
+2. **Class names in the exception's MRO**, most-derived first, from any module, so `openai`, `anthropic`, `httpx`, `requests`, `google.api_core` and builtin exceptions all work: `RateLimitError`, `OverloadedError`, `APITimeoutError`, `ReadTimeout`, `TimeoutError`, `APIConnectionError`, `ConnectionError`, `AuthenticationError`, `BadRequestError`, `NotFoundError`, `ResourceExhausted`, `ServiceUnavailable`, `DeadlineExceeded`, …
+
+3. Anything else is `unknown_error`, which is **not** retried.
+
+## Delays
+
+- A numeric `retry-after-ms` or `retry-after` response header wins, capped at `max_delay_ms`. HTTP-date values are ignored because using them would mean reading the clock.
+- Otherwise: `min(max_delay_ms, base_delay_ms × 2^(attempt−1))`, minus jitter.
+- Jitter: `blake3(jitter_key ‖ attempt) mod (span + 1)`, where `span = delay × jitter_percent / 100`.
+- All arithmetic is in integer milliseconds.
+
+<Aside type="tip" title="Spreading clients out">
+Deterministic jitter with one shared key would give every client the same delay. Give each client, tenant or request its own `jitter_key`. Retries spread out across clients, while any one failure stays reproducible.
+</Aside>
+
+## Policy
+
+```python
+RetryPolicy(max_attempts=5, base_delay_ms=1000, max_delay_ms=60_000, jitter_percent=20, jitter_key="")
+```
+
+`action` is `RETRY` only if the reason is retryable **and** `attempt < max_attempts`; `retryable` tells you whether the error kind could be retried at all.
+
+## `retry.call`
+
+```python
+result = retry.call(
+    client.chat.completions.create, model="gpt-4o", messages=msgs,
+    policy=RetryPolicy(max_attempts=4, jitter_key=request_id),
+    on_retry=lambda exc, d: log.warning("retrying %s in %.2fs", d.reason.value, d.delay_seconds),
+)
+```
+
+The last exception is re-raised when the error isn't retryable or attempts run out. Inject `sleep=` to make tests instant: the decisions are deterministic, and only the waiting happens in real time.

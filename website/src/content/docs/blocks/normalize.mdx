@@ -1,0 +1,43 @@
+---
+title: normalize
+description: Canonical text normalization for comparing, hashing and deduplicating, locale-independent.
+---
+
+import Playground from '../../../components/Playground.astro';
+
+`normalize` makes text comparable. Use it before hashing, caching keys, deduplication or comparing model outputs across runs.
+
+```python
+normalize(text, *, form="NFKC", strip_accents=False, lowercase=False,
+          remove_control=True, remove_zero_width=True,
+          collapse_whitespace=True, preserve_newlines=False, strip=True) -> str
+```
+
+```python
+>>> normalize("Hello   World\n\n")
+'Hello World'
+>>> normalize("Café", strip_accents=True)
+'Cafe'
+>>> normalize("ﬁle ①")
+'file 1'
+```
+
+## Try it
+
+<Playground ops={['normalize']} />
+
+## Steps, in a fixed order
+
+1. **Unicode normalization**: `form` = `"NFC"`, `"NFD"`, `"NFKC"` (default), `"NFKD"` or `None`.
+2. **`strip_accents`**: decompose, drop combining marks (General Category M), re-apply `form`. Meant for Latin-script text; it also removes vowel signs in scripts such as Devanagari.
+3. **`lowercase`**: full Unicode default case mapping, locale-independent (`İ` → `i̇`, final sigma handled).
+4. **`remove_control`**: drop category Cc, except whitespace.
+5. **`remove_zero_width`**: drop U+200B, U+2060 and U+FEFF. ZWJ/ZWNJ (emoji sequences, Indic scripts) and bidi marks are kept.
+6. **`collapse_whitespace`**: each run of Unicode whitespace becomes one space. With `preserve_newlines`, a run containing a line break becomes `\n`.
+7. **`strip`**: trim leading and trailing whitespace.
+
+Normalization is idempotent: `normalize(normalize(x)) == normalize(x)` for any options.
+
+## Unicode version
+
+`beacon.UNICODE_VERSION` reports the Unicode version of the tables. It only changes in a minor release and is recorded in the changelog, so `normalize` output is stable within a minor series.

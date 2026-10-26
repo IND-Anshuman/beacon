@@ -1,0 +1,78 @@
+---
+title: Error codes
+description: Every stable error code beacon can raise, what triggers it, and which exception carries it.
+---
+
+Error codes are part of the [compatibility contract](../../guarantees/determinism/#4-stable-error-messages). They never change in a patch release. Branch on `err.code`, not on message text.
+
+## JSON (`extract_json`, and JSON inside tool calls)
+
+| Code | Trigger | Exception |
+| --- | --- | --- |
+| `json.unexpected_end` | input ends mid-value (truncated output) | `MalformedOutputError` |
+| `json.unterminated_string` | a string is never closed | `MalformedOutputError` |
+| `json.expected_value` | `NaN`, bare words, a non-JSON fence | `MalformedOutputError` |
+| `json.expected_key` | unquoted or single-quoted key | `MalformedOutputError` |
+| `json.expected_colon` | missing `:` after a key | `MalformedOutputError` |
+| `json.expected_comma` | missing `,` between items | `MalformedOutputError` |
+| `json.trailing_comma` | `[1,]`, `{"a": 1,}` | `MalformedOutputError` |
+| `json.invalid_literal` | `tru`, `True`, `None` | `MalformedOutputError` |
+| `json.invalid_number` | `01`, `1.`, `.5` | `MalformedOutputError` |
+| `json.number_out_of_range` | `1e999` | `MalformedOutputError` |
+| `json.invalid_escape` | `"\q"` | `MalformedOutputError` |
+| `json.invalid_unicode_escape` | bad `\u` digits | `MalformedOutputError` |
+| `json.lone_surrogate` | unpaired `\ud800` | `MalformedOutputError` |
+| `json.control_character` | a raw newline or tab inside a string | `MalformedOutputError` |
+| `json.duplicate_key` | `{"a": 1, "a": 2}` | `MalformedOutputError` |
+| `json.too_deep` | more than 512 nesting levels | `MalformedOutputError` |
+| `json.trailing_characters` | extra text after the JSON in a fence | `MalformedOutputError` |
+| `json.not_found` | no JSON object or array at all | `NoJSONFoundError` |
+| `extract_json.multiple_candidates` | `select="only"` with more than one value | `MalformedOutputError` |
+
+## Tool calls (`parse_tool_call`)
+
+| Code | Trigger | Exception |
+| --- | --- | --- |
+| `tool_call.not_found` | no call in any format | `NoToolCallFoundError` |
+| `tool_call.multiple` | `parse_tool_call` found more than one | `MalformedOutputError` |
+| `tool_call.unrecognized` | tagged content that isn't a call | `MalformedOutputError` |
+| `tool_call.invalid_name` | empty or non-string name | `MalformedOutputError` |
+| `tool_call.invalid_arguments` | arguments not an object, or a bad JSON string | `MalformedOutputError` |
+| `tool_call.ambiguous_arguments` | two arguments keys | `MalformedOutputError` |
+| `tool_call.positional_argument` | `f(q=1, 2)` | `MalformedOutputError` |
+| `tool_call.duplicate_argument` | `f(q=1, q=2)` | `MalformedOutputError` |
+| `tool_call.duplicate_key` · `tool_call.expected_key` · `tool_call.expected_colon` · `tool_call.expected_comma` · `tool_call.expected_value` · `tool_call.unterminated_string` · `tool_call.invalid_escape` · `tool_call.unexpected_end` · `tool_call.trailing_characters` · `tool_call.too_deep` | malformed call-syntax literals | `MalformedOutputError` |
+
+## Templates (`template`)
+
+| Code | Trigger | Exception |
+| --- | --- | --- |
+| `template.unmatched_close` | single `}` | `TemplateSyntaxError` |
+| `template.unterminated` | `{` never closed | `TemplateSyntaxError` |
+| `template.nested_brace` | `{a{b}` | `TemplateSyntaxError` |
+| `template.empty_name` | `{}` | `TemplateSyntaxError` |
+| `template.format_spec` | `{x:.2f}` | `TemplateSyntaxError` |
+| `template.invalid_name` | `{ x }`, `{x.y}`, `{0}` | `TemplateSyntaxError` |
+| `template.unknown_conversion` | `{x!r}` | `TemplateSyntaxError` |
+| `template.missing_variable` | strict mode, variable not provided | `MissingVariableError` |
+| `template.extra_variable` | strict mode, variable not used | `ExtraVariableError` |
+
+## Schemas (`validate_schema`)
+
+| Code | Trigger | Exception |
+| --- | --- | --- |
+| `schema.validation_failed` | the instance violates the schema | `SchemaValidationError` |
+| `schema.invalid` | the schema is invalid or uses an unsupported keyword | `SchemaError` |
+
+## Snapshots and integrations
+
+| Code | Trigger | Exception |
+| --- | --- | --- |
+| `snapshot.mismatch` | the stored snapshot differs | `SnapshotMismatchError` |
+| `snapshot.missing` | the snapshot doesn't exist in `check` mode | `SnapshotMismatchError` |
+| `openai.no_content` | completion has no text (refusal, tool-only) | `MalformedOutputError` |
+| `openai.unknown_tool` | a call to a tool not in `tool_schemas` | `MalformedOutputError` |
+
+## Argument errors
+
+Invalid arguments (`select`, `kind`, `escape`, `form`, `policy`, `length`, `RetryPolicy` fields, custom labels and patterns) raise `ValueError`. Unsupported value types raise `TypeError`.

@@ -1,0 +1,81 @@
+---
+title: parse_tool_call
+description: Extract tool and function calls from any vendor's format, with documented detection and strict arguments.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Playground from '../../../components/Playground.astro';
+
+Every model family writes tool calls differently, and so do fine-tunes of the same family. `parse_tool_call` handles the common formats with one documented detection order, and parses arguments strictly. A broken call raises with a position. It is never silently dropped.
+
+```python
+parse_tool_call(text) -> {"name": str, "arguments": dict}
+parse_tool_calls(text, *, include_format=False) -> list[dict]
+```
+
+```python
+>>> parse_tool_call('Call: search(query="rust async", limit=5)')
+{'name': 'search', 'arguments': {'query': 'rust async', 'limit': 5}}
+>>> parse_tool_call('[TOOL_CALL]name=search;args={"q":"rust"}[/TOOL_CALL]')
+{'name': 'search', 'arguments': {'q': 'rust'}}
+```
+
+## Try it
+
+<Playground ops={['parse_tool_calls']} />
+
+## Formats and detection order
+
+Formats are tried in three tiers; **the first tier that finds anything wins**:
+
+| Tier | Format id | Example |
+| --- | --- | --- |
+| 1 · tagged | `hermes` | `<tool_call>{"name": "f", "arguments": {...}}</tool_call>` (Hermes, Qwen, many fine-tunes) |
+| | `bracket` | `[TOOL_CALL]name=f;args={...}[/TOOL_CALL]` or `[TOOL_CALL]{json}[/TOOL_CALL]` |
+| | `mistral` | `[TOOL_CALLS] [{"name": "f", "arguments": {...}}]` or `[TOOL_CALLS]f[ARGS]{...}` |
+| | `llama` | `<\|python_tag\|>{"name": "f", "parameters": {...}}` or `<\|python_tag\|>tool.call(k=v)` |
+| | `xml_invoke` | `<invoke name="f"><parameter name="k">v</parameter></invoke>` |
+| 2 · JSON | `json` | OpenAI and Anthropic shapes, bare or fenced (see below) |
+| 3 · call syntax | `python` | `search(query="rust", limit=5)` |
+
+Within the tagged tier, calls are returned in text order. Pass `include_format=True` to see which format matched.
+
+### JSON shapes
+
+A JSON value counts as a tool call only if it has a call **shape**:
+
+- `{"name": ..., "arguments" | "parameters" | "input" | "args": ...}`, where only `id`, `type`, `call_id` and `index` may appear alongside
+- `{"type": "tool_use", "name": ..., "input": {...}}` (Anthropic)
+- `{"type": "function", "function": {"name": ..., "arguments": "..."}}` (OpenAI `tool_calls` item)
+- `{"tool_calls": [...]}` and `{"function_call": {...}}` (OpenAI message shapes)
+- a JSON array of any of the above
+
+So `{"name": "Alice", "age": 3}` is data, not a call. **`arguments` given as a JSON string** (as OpenAI does) is parsed strictly and must decode to an object.
+
+### Python call syntax
+
+Keyword arguments only, with Python or JSON literals: strings in either quote style, numbers, `True`/`False`/`None`/`true`/`false`/`null`, lists, tuples (→ lists), and dicts with string keys. A call is recognised only if its parentheses are empty or start with `name=`, so `f(x)` in prose is not a tool call.
+
+<Aside type="note">
+`<parameter>` values in `xml_invoke` that parse as strict JSON become JSON values (`<parameter name="n">5</parameter>` → `5`); anything else is a string with XML entities decoded.
+</Aside>
+
+## Exactly one, or all
+
+`parse_tool_call` expects **exactly one** call and raises `tool_call.multiple` otherwise, so a model that unexpectedly calls two tools is noticed. Use `parse_tool_calls` when parallel calls are expected.
+
+## Errors
+
+| Code | When |
+| --- | --- |
+| `tool_call.not_found` (`NoToolCallFoundError`) | no tool call in any tier |
+| `tool_call.multiple` | `parse_tool_call` found more than one |
+| `tool_call.unrecognized` | tagged content that isn't a call shape |
+| `tool_call.invalid_name` | empty or non-string name |
+| `tool_call.invalid_arguments` | arguments aren't an object, or the arguments string isn't valid JSON |
+| `tool_call.ambiguous_arguments` | more than one arguments key |
+| `tool_call.positional_argument` | `f(q=1, 2)` |
+| `tool_call.duplicate_argument` | `f(q=1, q=2)` |
+| `json.*`, other `tool_call.*` | malformed JSON or call-syntax literals, with position |
+
+Streaming (partial) tool calls are intentionally not supported in v0.1. Parse the complete message.

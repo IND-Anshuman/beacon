@@ -1,0 +1,86 @@
+---
+title: redact
+description: Deterministic PII and secret redaction with validated detectors and stable replacements.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Playground from '../../../components/Playground.astro';
+
+`redact` removes sensitive data before you log text or send it to a model. `detect_pii` finds it without changing anything. Detectors are validated (Luhn checksums, SSN ranges, digit counts, a real IPv6 parser) to keep false positives down, and overlapping matches are resolved by a fixed rule.
+
+```python
+redact(text, *, policy="default", exclude=(), patterns=None, terms=None,
+       replacement="[REDACTED:{label}]") -> str
+detect_pii(text, *, policy="default", exclude=(), patterns=None, terms=None) -> list[dict]
+```
+
+```python
+>>> redact("Email me at alice@example.com")
+'Email me at [REDACTED:email]'
+>>> redact("Card: 4111-1111-1111-1111", policy="strict")
+'Card: [REDACTED:credit_card]'
+```
+
+## Try it
+
+<Playground ops={['redact']} />
+
+## Detectors
+
+| Label | Detects | Validation |
+| --- | --- | --- |
+| `private_key` | PEM `-----BEGIN … PRIVATE KEY-----` blocks | |
+| `jwt` | `eyJ….eyJ….signature` | |
+| `bearer_token` | the token after `Bearer` (the scheme is kept) | |
+| `api_key` | OpenAI, Anthropic, GitHub, Slack, Google, Stripe, Hugging Face keys | |
+| `aws_access_key` | `AKIA…` / `ASIA…` | |
+| `email` | addresses, including internationalized local parts | |
+| `credit_card` | 13–19 digits with optional spaces/dashes | Luhn checksum |
+| `ssn` | `NNN-NN-NNNN` | no 000/666/9xx area, 00 group, 0000 serial |
+| `phone` | `+CC …` international, `(NNN) NNN-NNNN`, `NNN-NNN-NNNN` | digit counts, no adjacent digits/letters |
+| `ipv6` | IPv6 addresses | parsed by a real IPv6 parser |
+| `ipv4` | dotted quads 0–255 | |
+
+### Policies
+
+| Policy | Labels |
+| --- | --- |
+| `default` | everything except `ipv4`/`ipv6` |
+| `strict` | everything |
+| `secrets` | `private_key`, `jwt`, `bearer_token`, `api_key`, `aws_access_key` |
+| `pii` | `email`, `credit_card`, `ssn`, `phone` |
+| `none` | nothing (use with `patterns`/`terms`) |
+
+`exclude` turns off built-in labels: `redact(text, exclude=["phone"])`.
+
+## Your own detectors
+
+```python
+redact(
+    "EMP-123456 works on Project Falcon",
+    patterns={"employee_id": r"EMP-\d{6}"},          # Rust regex syntax, compiled per call
+    terms={"codename": ["Project Falcon", "falcon"]}, # whole words, ASCII case-insensitive
+)
+# '[REDACTED:employee_id] works on [REDACTED:codename]'
+```
+
+Labels must match `[a-z][a-z0-9_]*`.
+
+## Replacements
+
+`replacement` may use `{label}` and `{hash}`, the first 8 hex digits of BLAKE3 of the matched text. With `{hash}` the same value always gets the same token, so you can still see that two mentions refer to the same person without seeing who it is:
+
+```python
+>>> redact("alice@x.io wrote to bob@x.io; alice@x.io replied", replacement="<{label}:{hash}>")
+'<email:4610c0e7> wrote to <email:72b1cf05>; <email:4610c0e7> replied'
+```
+
+Write `{{` and `}}` for literal braces; any other placeholder is a `ValueError`.
+
+## Overlaps
+
+All matches are sorted by start offset, then longer first, then priority (the table order above, then `patterns` in the order given, then `terms`). A match is kept only if it doesn't overlap one already kept. This is how a credit-card number that contains a phone-shaped run is redacted once, as a card.
+
+<Aside type="note">
+`detect_pii` returns `{"label", "start", "end", "text"}` dicts with **code-point** offsets, so `text[start:end]` is always the match.
+</Aside>

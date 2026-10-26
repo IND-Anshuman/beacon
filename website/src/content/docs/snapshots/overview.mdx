@@ -1,0 +1,95 @@
+---
+title: Snapshot testing
+description: Test the deterministic parts of an LLM app with recorded responses and byte-exact golden files.
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Most LLM apps have no tests, because the model's output isn't deterministic. But your code's handling of a **given** output is. Record a model response once and snapshot what your parsing, validation and routing do with it. Every behaviour change then shows up as a diff in code review.
+
+```python
+from beacon import extract_json
+from beacon.snapshots import assert_snapshot
+
+def test_cancel_intent():
+    raw = load_fixture("cancel.txt")              # a recorded model response
+    assert_snapshot("intents/cancel", extract_json(raw), input=raw, schema=INTENT)
+```
+
+## How it works
+
+<Steps>
+
+1. **First run:** the snapshot doesn't exist, so beacon writes `snapshots/intents/cancel.yaml` and the test passes.
+2. **Later runs:** beacon renders the snapshot again and compares it **byte for byte** with the stored file. Any difference fails the test with a unified diff.
+3. **Intended change:** run `python -m beacon.snapshots update`, review the diff in git, and commit.
+
+</Steps>
+
+## The API
+
+```python
+assert_snapshot(name, value, *, input=..., schema=None, directory=None, mode=None)
+snapshot_test = assert_snapshot   # alias
+```
+
+| Parameter | Meaning |
+| --- | --- |
+| `name` | Path-like id. `"intents/cancel"` → `snapshots/intents/cancel.yaml`. Letters, digits, `_ - .` and `/`; segments can't start with `.` |
+| `value` | JSON-like data. Dataclasses, Pydantic models, enums, sets (sorted), bytes and **exceptions** are converted automatically |
+| `input` | Recorded next to the value, so the file explains itself |
+| `schema` | The validation outcome is recorded too |
+| `directory`, `mode` | Per-call overrides |
+
+## The file format
+
+```yaml title="snapshots/extract_json/markdown_fence_basic.yaml"
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_json/markdown_fence_basic
+input: |-
+  Here's the answer:
+  ```json
+  {"intent": "cancel", "confidence": 0.9}
+  ```
+  Hope that helps!
+value:
+  intent: cancel
+  confidence: 0.9
+```
+
+Snapshots are written by beacon's own **canonical YAML emitter** and compared as bytes, so no YAML parser runs at test time and a PyYAML upgrade can't change results. Mapping keys keep insertion order, because key order is behaviour worth catching. Files are UTF-8 with LF line endings.
+
+## Snapshot errors, too
+
+```python
+def test_truncated_output_is_rejected():
+    with pytest.raises(MalformedOutputError) as exc:
+        extract_json('{"intent": "cancel", "confid')
+    assert_snapshot("errors/truncated", exc.value)
+```
+
+```yaml
+value:
+  type: MalformedOutputError
+  code: json.unterminated_string
+  message: "unterminated string (line 1, column 22)"
+  position: 21
+  line: 1
+  column: 22
+```
+
+A changed error message is a behaviour change, since it may be exactly what you feed back to the model.
+
+## Modes
+
+| Mode | Missing snapshot | Different snapshot |
+| --- | --- | --- |
+| `new` (local default) | written, test passes | fails with a diff |
+| `check` (default when `CI` is set) | fails | fails with a diff |
+| `update` | written | rewritten |
+
+See [CI & modes](../ci/) for how the mode is chosen, and [pytest](../pytest/) for the fixture and options.
+
+<Aside type="tip">
+Prefer several small, named snapshots over one big blob. Diffs stay readable, and a failure points straight at the behaviour that changed.
+</Aside>

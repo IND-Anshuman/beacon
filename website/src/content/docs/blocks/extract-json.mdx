@@ -1,0 +1,96 @@
+---
+title: extract_json
+description: Extract a JSON object or array from messy LLM output with a fully specified algorithm and strict parsing.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import Playground from '../../../components/Playground.astro';
+
+`extract_json` is the block most LLM apps end up rewriting several times. It finds the JSON in fenced blocks, preamble and trailing prose, parses it **strictly**, and when the JSON is broken it tells you exactly where instead of guessing.
+
+```python
+extract_json(text, *, schema=None, select="first", kind="auto", required=True) -> Any
+extract_json_detailed(text, *, select="first", kind="auto") -> Extraction
+```
+
+```python
+>>> extract_json('Sure! Here it is:\n```json\n{"intent": "cancel", "confidence": 0.9}\n```\nDone.')
+{'intent': 'cancel', 'confidence': 0.9}
+>>> extract_json('The user wants to {"intent": cancel')
+MalformedOutputError: expected a JSON value, found 'c' (line 1, column 30)
+```
+
+## Try it
+
+<Playground ops={['extract_json']} />
+
+## The algorithm
+
+The same input always takes the same path. There are no heuristics beyond these rules:
+
+<Steps>
+
+1. **Fences.** A line that starts (with at most 3 spaces of indentation) with ```` ``` ```` or `~~~` opens a fence. A line repeating the same character at least as many times closes it. An unclosed fence runs to the end of the text, as in a truncated response. *JSON fences* are those labelled `json` (case-insensitive), or unlabelled fences whose content starts with `{` or `[`. **If any JSON fence exists, only JSON fences are candidates**, and each must contain exactly one JSON document.
+
+2. **Inline scan.** Otherwise the text is scanned left to right. At each `{` or `[`, a strict JSON value is parsed. On success it becomes a candidate and scanning resumes after it. A failure at a *JSON-like opener* (`{` followed by `"`, `'` or `}`, or `[` followed by `{`, `[`, `"` or `]`) is a **malformed candidate**, and scanning resumes after the point of failure. Other failures, such as `{name}`, `[1-3]` or `[see below]`, are prose.
+
+3. **Kind filter.** `kind="auto"` keeps objects if there are any, otherwise arrays, so citation markers like `[1]` are skipped when the model also returned an object. `"object"`, `"array"` and `"any"` (text order) are explicit.
+
+4. **Selection.** `select="first"` (default), `"last"`, `"largest"` (by length; ties → first) or `"only"` (more than one candidate raises). Selecting a malformed candidate raises its parse error.
+
+</Steps>
+
+<Aside type="caution" title="Truncation never yields a fragment">
+A truncated response like `{"items": [{"a": 1}, {"b": 2}, {"c": ` raises `json.unexpected_end`. The complete inner objects are never returned, because values nested inside a failed value are not candidates. A partial answer can't slip through as a valid one.
+</Aside>
+
+## Strict parsing
+
+The parser accepts RFC 8259 JSON and nothing else:
+
+| Rejected | Code |
+| --- | --- |
+| trailing commas `[1,]`, `{"a": 1,}` | `json.trailing_comma` |
+| single quotes, unquoted keys | `json.expected_key` |
+| `NaN`, `Infinity`, bare words | `json.expected_value` |
+| `True`, `None`, `tru` | `json.invalid_literal` |
+| leading zeros `01`, `1.`, `.5` | `json.invalid_number` |
+| raw newlines or tabs inside strings | `json.control_character` |
+| duplicate keys `{"a": 1, "a": 2}` | `json.duplicate_key` |
+| unpaired surrogates `"\ud800"` | `json.lone_surrogate` |
+| nesting deeper than 512 levels | `json.too_deep` |
+
+Also:
+
+- **Key order is preserved** exactly as the model wrote it.
+- **Integers of any size are exact.** `123456789012345678901234567890` becomes a Python `int` and never passes through a float.
+- Numbers with a fraction or exponent become correctly rounded floats, and overflow (`1e999`) raises `json.number_out_of_range`.
+
+## Options
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `schema` | `None` | Validate the result with [`validate_schema`](../validate-schema/). |
+| `select` | `"first"` | `"first"`, `"last"`, `"largest"`, `"only"` |
+| `kind` | `"auto"` | `"auto"`, `"object"`, `"array"`, `"any"` |
+| `required` | `True` | With `False`, return `None` when there is no candidate at all (malformed JSON still raises). |
+
+## Where was it found?
+
+`extract_json_detailed` returns an `Extraction` with the value and where it came from, which is useful for debugging and snapshots:
+
+```python
+>>> d = extract_json_detailed('Sure:\n```json\n{"a": 1}\n```')
+>>> d.value, d.source, d.start, d.end, d.candidates
+({'a': 1}, 'fence', 14, 22, 1)
+```
+
+`start`/`end` are code-point offsets of the JSON text, and `source` is `"whole"`, `"fence"` or `"inline"`.
+
+## Errors
+
+| Code | When |
+| --- | --- |
+| `json.not_found` (`NoJSONFoundError`) | there is no JSON object or array at all |
+| `extract_json.multiple_candidates` | `select="only"` with more than one candidate |
+| `json.*` | the selected candidate is malformed (see the table above) |

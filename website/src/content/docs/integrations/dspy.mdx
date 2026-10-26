@@ -1,0 +1,57 @@
+---
+title: DSPy
+description: A strict JSON adapter for DSPy and a schema-validating module.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+```bash
+pip install "llm-beacon[dspy]"
+```
+
+```python
+import dspy
+from typing import Literal
+from beacon.integrations.dspy import BeaconJSONAdapter, BeaconValidateSchema
+
+dspy.configure(lm=dspy.LM("openai/gpt-4o"), adapter=BeaconJSONAdapter())
+
+class IntentSignature(dspy.Signature):
+    """Extract user intent from a message."""
+    message: str = dspy.InputField()
+    intent: Literal["cancel", "refund", "question"] = dspy.OutputField()
+    confidence: float = dspy.OutputField()
+
+class IntentModule(dspy.Module):
+    def __init__(self):
+        super().__init__()
+        self.extract = dspy.ChainOfThought(IntentSignature)
+        self.validate = BeaconValidateSchema(IntentSignature)
+
+    def forward(self, message):
+        return self.validate(self.extract(message=message))
+```
+
+## `BeaconJSONAdapter`
+
+A subclass of `dspy.JSONAdapter` that keeps DSPy's prompt formatting but parses responses with `extract_json(kind="object")`:
+
+- strict JSON only, no repair;
+- missing or malformed fields raise DSPy's `AdapterParseError`, which feeds DSPy's own retry and fallback logic;
+- values are then converted to the field annotations by DSPy's `parse_value` (that conversion is DSPy's behaviour, not beacon's).
+
+## `BeaconValidateSchema`
+
+Builds a JSON Schema from a signature's output fields (via Pydantic) and validates predictions against it, raising `SchemaValidationError`. A JSON Schema mapping works too:
+
+```python
+BeaconValidateSchema({"type": "object", "properties": {"n": {"type": "integer"}}, "required": ["n"]})
+```
+
+## Why it matters for optimization
+
+DSPy optimizers (e.g. `BootstrapFewShot`) compare metrics across many runs. With a deterministic parser and validator, a metric change comes from your prompts and demos, never from flaky parsing.
+
+<Aside type="caution">
+DSPy's adapter API is internal and changes between releases. The adapter is tested against DSPy 3.x.
+</Aside>

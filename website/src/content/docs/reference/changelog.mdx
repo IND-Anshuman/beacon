@@ -1,0 +1,28 @@
+---
+title: Changelog
+description: Release history, with behaviour changes listed separately.
+---
+
+beacon follows semantic versioning, plus the extra rules in the [determinism contract](../../guarantees/determinism/): **patch releases never change block output, error messages included.** Each release lists *Behaviour changes* separately: any input whose output differs from the previous release.
+
+The canonical changelog is [`CHANGELOG.md`](https://github.com/IND-Anshuman/beacon/blob/main/CHANGELOG.md) in the repository; releases are tagged on [GitHub](https://github.com/IND-Anshuman/beacon/releases).
+
+## 0.1.0 · unreleased
+
+The first release, published on PyPI as `llm-beacon` (import name `beacon`).
+
+### Added
+
+- **Blocks**, implemented in Rust via PyO3 0.30: `template`, `template_variables`, `extract_json`, `extract_json_detailed`, `parse_tool_call`, `parse_tool_calls`, `validate_schema`, `schema_errors`, `normalize`, `hash_content`, `redact`, `detect_pii`, `retry.classify`, `retry.backoff_delay`, `retry.call`.
+- **Composition**: `Pipeline` and `Block`, with content-hash traces.
+- **Snapshot testing**: `assert_snapshot`, the pytest `snapshot` fixture, `--beacon-snapshot`, and `python -m beacon.snapshots update|check`.
+- **Integrations**: OpenAI SDK, LangChain, LlamaIndex, Pydantic AI, DSPy.
+- **Packaging**: abi3 wheels for CPython 3.10+.
+
+### Pinned data versions
+
+| Data | Version |
+| --- | --- |
+| Unicode tables | 18.0.0 (`beacon.UNICODE_VERSION`) |
+| Canonical hash encoding | v1 |
+| Snapshot file format | v1 |

@@ -1,0 +1,48 @@
+---
+title: Pydantic AI
+description: beacon as an output validator, raising ModelRetry with stable feedback.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+```python
+from pydantic_ai import Agent
+from beacon.integrations.pydantic_ai import BeaconValidator
+
+agent = Agent("openai:gpt-4o", output_type=Intent)
+agent.output_validator(BeaconValidator(Intent))
+```
+
+<Aside type="note">
+Pydantic AI registers output validators with the `output_validator` decorator or method. There is no `result_validator=` keyword.
+</Aside>
+
+## What it does
+
+- Validates model outputs against the model's JSON Schema, or a stricter schema you pass (with `enum`s or bounds your model class doesn't express).
+- For `output_type=str` agents, extracts and validates JSON from the text and returns the parsed value.
+- On failure, raises **`ModelRetry`** with beacon's stable message. The agent then re-asks the model with precise, identical feedback for identical mistakes.
+
+```python
+INTENT = {
+    "type": "object",
+    "properties": {"intent": {"enum": ["cancel", "refund", "question"]}, "confidence": {"type": "number"}},
+    "required": ["intent", "confidence"],
+}
+agent = Agent("openai:gpt-4o", output_type=str)
+agent.output_validator(BeaconValidator(INTENT))
+
+# If the model answers {"intent": "unsubscribe", ...}, it is re-prompted with:
+#   1 schema violation:
+#     - /intent: "unsubscribe" is not one of ["cancel", "refund", "question"]
+```
+
+## Options
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `model_or_schema` | | Pydantic model class or JSON Schema mapping |
+| `retry` | `True` | raise `ModelRetry` (if Pydantic AI is installed) instead of the beacon error |
+| `select`, `kind` | `"first"`, `"auto"` | used for text outputs |
+
+`BeaconValidator(...).validate(output)` runs the same checks without the `ModelRetry` translation. It's useful in tests, and the validator also works without Pydantic AI installed.

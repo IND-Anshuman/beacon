@@ -1,0 +1,60 @@
+---
+title: Introduction
+description: What beacon is, the problem it solves, and how it fits next to your LLM client.
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+beacon is the **deterministic layer between your Python code and your LLM**. It gives you building blocks for the work around every model call: prompt templating, JSON extraction, tool-call parsing, schema validation, text normalization, content hashing, PII redaction and retry classification. All of them share one contract: **same input → same output, every time, on every machine.**
+
+## Why it exists
+
+The model is meant to be the only unpredictable part of an LLM application. In practice, the code around it adds unpredictability of its own:
+
+- **Parsing** that relies on greedy regexes or "repair" libraries that guess what the model meant.
+- **Validation** that silently coerces `"0.9"` into `0.9`, so model mistakes never show up.
+- **Prompts** built with f-strings that user input can break out of.
+- **Retries** with random jitter, so two logs of the same failure never match.
+- **No tests**, because the output "isn't deterministic anyway".
+
+beacon replaces that glue with small, pure functions written in Rust. Each has a published contract, edge-case tests and golden snapshots. You can then test everything except the model, and when something changes you can see exactly what.
+
+<div class="beacon-guarantee">
+  <span>✓</span>
+  <p><strong>The promise:</strong> every block is a pure function. No hidden state, no I/O, no clock, no environment variables, no randomness. Its output (including error messages) is byte-identical across runs, operating systems, Python versions and patch releases. See the <a href="../../guarantees/determinism/">determinism contract</a>.</p>
+</div>
+
+## What's in the box
+
+<CardGrid>
+  <Card title="Eight blocks" icon="puzzle">
+    `template`, `extract_json`, `parse_tool_call`, `validate_schema`, `normalize`, `hash_content`, `redact`, `retry`. Plain functions you can call anywhere.
+  </Card>
+  <Card title="Snapshot testing" icon="approve-check">
+    `assert_snapshot()` and a pytest fixture. Record a model response once, then any change in how your code handles it fails CI with a readable diff.
+  </Card>
+  <Card title="Pipelines" icon="random">
+    `Pipeline` and `Block` compose steps and record a content-hash trace of every run.
+  </Card>
+  <Card title="Integrations" icon="setting">
+    Drop-in parsers and validators for the OpenAI SDK, LangChain, LlamaIndex, Pydantic AI and DSPy.
+  </Card>
+</CardGrid>
+
+## What beacon is not
+
+- **Not an LLM client.** It never makes network calls. Use any client you like.
+- **Not a repair tool.** Malformed output raises an error with a position. It is never "fixed" for you.
+- **Not a cache or rate limiter.** Those are separate concerns; compose them with beacon if you need them.
+- **Not a framework.** There's nothing to subclass and no runtime to adopt. Use one block or all eight.
+
+## Next steps
+
+<CardGrid>
+  <LinkCard title="Installation" href="../installation/" description="pip install, extras, supported platforms." />
+  <LinkCard title="Quickstart" href="../quickstart/" description="From install to a snapshot-tested pipeline in five minutes." />
+  <LinkCard title="Core concepts" href="../core-concepts/" description="Pure blocks, strict contracts, stable errors." />
+  <LinkCard title="Playground" href="../../playground/" description="Run the real engine in your browser." />
+  <LinkCard title="Source on GitHub" href="https://github.com/IND-Anshuman/beacon" description="IND-Anshuman/beacon: code, issues and releases." />
+  <LinkCard title="Install from PyPI" href="https://pypi.org/project/llm-beacon/" description="pip install llm-beacon, then import beacon." />
+</CardGrid>

@@ -1,0 +1,78 @@
+---
+title: LangChain
+description: A beacon-rendered prompt template, a strict JSON output parser and a callback handler.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+```bash
+pip install "llm-beacon[langchain]"
+```
+
+```python
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
+from beacon.integrations.langchain import BeaconJsonOutputParser, BeaconPromptTemplate
+
+class Intent(BaseModel):
+    intent: str
+    confidence: float
+
+prompt = BeaconPromptTemplate.from_template("Classify: <msg>{message}</msg>")
+parser = BeaconJsonOutputParser(pydantic_object=Intent)
+
+chain = prompt | ChatOpenAI(model="gpt-4o") | parser
+chain.invoke({"message": "I want to cancel"})   # -> Intent(intent='cancel', confidence=0.93)
+```
+
+## `BeaconPromptTemplate`
+
+A `StringPromptTemplate` rendered by [`template`](../../blocks/template/):
+
+- input variables are inferred from the template;
+- values are XML-escaped (`escape=` to change);
+- missing variables raise `MissingVariableError`;
+- extra chain inputs are ignored, as LangChain expects.
+
+Format instructions contain JSON braces, so pass them as a partial and insert them unescaped:
+
+```python
+prompt = BeaconPromptTemplate(
+    template="<question>{question}</question>\n\n{format_instructions!raw}",
+    partial_variables={"format_instructions": parser.get_format_instructions()},
+)
+```
+
+## `BeaconJsonOutputParser`
+
+Strict extraction plus schema validation. Pass `pydantic_object=` (returns model instances), `json_schema=`, or `pydantic_schema=Model.model_json_schema()`.
+
+Failures raise LangChain's **`OutputParserException`**, so `with_retry()` and fixing parsers keep working. The beacon error is attached as `.beacon_error` and as `__cause__`:
+
+```python
+try:
+    chain.invoke(...)
+except OutputParserException as exc:
+    exc.beacon_error.code     # 'json.trailing_comma'
+    exc.llm_output            # the raw model text
+```
+
+`get_format_instructions()` is deterministic for a given schema.
+
+## `BeaconCallbackHandler`
+
+Records what beacon makes of every LLM response in a run, without changing the chain:
+
+```python
+handler = BeaconCallbackHandler(schema=Intent.model_json_schema())
+chain.invoke(inputs, config={"callbacks": [handler]})
+handler.records[-1]
+# {'run_id': '…', 'text_hash': '1593ddc6f67bfc10', 'json_found': True,
+#  'source': 'fence', 'valid': True, 'errors': [], 'error_code': None}
+```
+
+Records are also logged at INFO on the `beacon.integrations.langchain` logger. They contain only deterministic data (no timestamps), so you can snapshot them.
+
+<Aside type="note">
+Tested with langchain-core 1.x, including `FakeListLLM` and `FakeListChatModel` chains.
+</Aside>

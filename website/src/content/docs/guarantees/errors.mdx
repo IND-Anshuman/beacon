@@ -1,0 +1,90 @@
+---
+title: Errors
+description: The exception hierarchy, stable error codes, and how to use positions.
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Errors in beacon are data. Every exception carries a stable machine-readable `code`, a stable human-readable message, and, where it makes sense, the exact position of the problem.
+
+## Hierarchy
+
+```text
+BeaconError
+├── MalformedOutputError (ValueError)    .code .position .line .column .raw
+│   ├── NoJSONFoundError
+│   └── NoToolCallFoundError
+├── SchemaValidationError (ValueError)   .errors = [{path, keyword, message}] .raw
+├── SchemaError (ValueError)             the schema itself is invalid/unsupported
+├── TemplateError (ValueError)
+│   ├── TemplateSyntaxError              .position .line .column
+│   ├── MissingVariableError             .names (sorted)
+│   └── ExtraVariableError               .names (sorted)
+└── SnapshotMismatchError (AssertionError)  .path .diff
+```
+
+All are importable from `beacon`. Content errors also subclass `ValueError`, so existing `except ValueError` handlers keep working. Invalid **arguments** (an unknown `select=` mode, a bad `length=`) raise plain `ValueError`, and unsupported value types raise `TypeError`.
+
+## Positions
+
+Positional messages end with `(line L, column C)`. The attributes are:
+
+| Attribute | Meaning |
+| --- | --- |
+| `position` | code-point offset into the input (`text[position]` is the culprit) |
+| `line`, `column` | 1-based, counted in code points |
+
+```python
+text = '日本語 {"a": x}'
+try:
+    extract_json(text)
+except MalformedOutputError as err:
+    assert text[err.position] == "x"      # works with any Unicode before it
+```
+
+## Patterns
+
+<Tabs>
+  <TabItem label="Branch on the code">
+    ```python
+    try:
+        data = extract_json(raw, schema=SCHEMA)
+    except NoJSONFoundError:
+        data = fallback_answer(raw)          # the model answered in prose
+    except MalformedOutputError as err:
+        if err.code == "json.unexpected_end":
+            data = retry_with_higher_max_tokens()
+        else:
+            raise
+    ```
+  </TabItem>
+  <TabItem label="Re-prompt with feedback">
+    ```python
+    try:
+        data = extract_json(raw, schema=SCHEMA)
+    except (MalformedOutputError, SchemaValidationError) as err:
+        raw = llm(prompt + f"\n\nYour last reply was invalid: {err}\nTry again.")
+        data = extract_json(raw, schema=SCHEMA)
+    ```
+    The message is stable, so the model always gets identical feedback for identical mistakes, and your evals stay comparable.
+  </TabItem>
+  <TabItem label="Snapshot the error">
+    ```python
+    from beacon.snapshots import assert_snapshot
+
+    def test_truncated_response_is_rejected():
+        with pytest.raises(MalformedOutputError) as exc:
+            extract_json('{"intent": "cancel", "confid')
+        assert_snapshot("errors/truncated", exc.value)
+    ```
+    Snapshots of exceptions record the type, code, message and position.
+  </TabItem>
+</Tabs>
+
+<Aside type="tip">
+Integrations attach the raw model text to errors as `err.raw`, so the exact failing response is always available for logging and debugging.
+</Aside>
+
+## Compatibility
+
+Exception types, codes and messages follow the [determinism contract](../determinism/#4-stable-error-messages): they never change in a patch release. The complete list is in [Error codes](../../reference/error-codes/).

@@ -1,0 +1,47 @@
+---
+title: hash_content
+description: Deterministic, type-aware BLAKE3 hashing for snapshot ids, cache keys and deduplication.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Playground from '../../../components/Playground.astro';
+
+`hash_content` gives JSON-like data a stable fingerprint. Use it for snapshot ids, cache keys, deduplication and pipeline traces.
+
+```python
+hash_content(value, *, length=16) -> str
+```
+
+```python
+>>> hash_content({"intent": "cancel", "confidence": 0.9})
+'f41e0685bbe3fb6d'
+>>> hash_content({"b": 2, "a": 1}) == hash_content({"a": 1, "b": 2})
+True
+>>> hash_content([1, 2]) == hash_content([2, 1])
+False
+```
+
+## Try it
+
+The playground computes the digest in your browser with the WebAssembly build. It is identical to what Python returns.
+
+<Playground ops={['hash_content']} />
+
+## Rules
+
+- **Dict key order never matters**; keys are sorted by their UTF-8 bytes.
+- **List order does matter.**
+- **Types are distinguished**: `1`, `1.0`, `True` and `"1"` all hash differently, as do `0.0` and `-0.0`.
+- Lists and tuples with the same items hash equal.
+- All NaNs hash the same.
+- Integers of any size are exact.
+- Supported: `None`, `bool`, `int`, `float`, `str`, `bytes`, `list`, `tuple`, and `dict` with `str` keys. Subclasses such as `str`-enums hash as their base type; anything else raises `TypeError`.
+- `length` is 1 to 64 hex characters; shorter digests are prefixes of longer ones.
+
+<Aside type="tip">
+Hash text after normalizing it if superficial differences shouldn't matter: `hash_content(normalize(text))`.
+</Aside>
+
+## The encoding is a contract
+
+The digest is BLAKE3 over a documented, type-tagged canonical encoding. It's spelled out byte by byte in the [determinism contract](../../guarantees/determinism/#canonical-encoding-of-hash_content), and changing it is a major-version change. beacon's tests pin known digests on every OS and Python version.

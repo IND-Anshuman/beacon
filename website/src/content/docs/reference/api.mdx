@@ -1,0 +1,138 @@
+---
+title: Python API
+description: Every public function, class and exception in beacon, with signatures.
+---
+
+Everything below is importable from `beacon` unless noted.
+
+## Blocks
+
+```python
+template(source: str, mapping: Mapping[str, Any] | None = None, /, *,
+         strict: bool = True, escape: Literal["xml", "json", "none"] = "xml",
+         **variables: str | int | float | bool) -> str
+template_variables(source: str) -> list[str]
+
+extract_json(text: str, *, schema: Mapping | None = None,
+             select: Literal["first", "last", "largest", "only"] = "first",
+             kind: Literal["auto", "any", "object", "array"] = "auto",
+             required: bool = True) -> Any
+extract_json_detailed(text: str, *, select=..., kind=...) -> Extraction
+
+parse_tool_call(text: str) -> ToolCall                    # {"name", "arguments"}
+parse_tool_calls(text: str, *, include_format: bool = False) -> list[dict]
+
+validate_schema(instance: Any, schema: Mapping) -> None
+schema_errors(instance: Any, schema: Mapping) -> list[SchemaViolation]   # {"path", "keyword", "message"}
+
+normalize(text: str, *, form: Literal["NFC", "NFD", "NFKC", "NFKD"] | None = "NFKC",
+          strip_accents: bool = False, lowercase: bool = False,
+          remove_control: bool = True, remove_zero_width: bool = True,
+          collapse_whitespace: bool = True, preserve_newlines: bool = False,
+          strip: bool = True) -> str
+
+hash_content(value: Any, *, length: int = 16) -> str
+
+redact(text: str, *, policy: Literal["default", "strict", "secrets", "pii", "none"] = "default",
+       exclude: Iterable[str] = (), patterns: Mapping[str, str] | None = None,
+       terms: Mapping[str, Iterable[str]] | None = None,
+       replacement: str = "[REDACTED:{label}]") -> str
+detect_pii(text: str, *, policy=..., exclude=..., patterns=..., terms=...) -> list[PIIFinding]
+```
+
+## `beacon.retry`
+
+```python
+retry.classify(error: BaseException | int, *, attempt: int = 1,
+               policy: RetryPolicy = RetryPolicy()) -> RetryDecision
+retry.backoff_delay(attempt: int, *, policy: RetryPolicy = RetryPolicy()) -> float
+retry.call(fn, /, *args, policy=..., sleep=time.sleep, on_retry=None, **kwargs)
+
+@dataclass(frozen=True)
+class RetryPolicy:
+    max_attempts: int = 5
+    base_delay_ms: int = 1000
+    max_delay_ms: int = 60_000
+    jitter_percent: int = 20
+    jitter_key: str = ""
+
+@dataclass(frozen=True)
+class RetryDecision:
+    action: RetryAction            # RETRY | FAIL        (str enum)
+    reason: RetryReason            # RATE_LIMIT, OVERLOADED, SERVER_ERROR, TIMEOUT, CONNECTION_ERROR,
+                                   # CONFLICT, AUTH_ERROR, BAD_REQUEST, NOT_FOUND, REQUEST_TOO_LARGE,
+                                   # CLIENT_ERROR, UNKNOWN_ERROR   (str enum)
+    delay_seconds: float
+    attempt: int
+    retryable: bool
+    should_retry: bool             # property
+```
+
+## Composition
+
+```python
+class Block:
+    name: str = ""                 # label in traces (defaults to the class name)
+    def run(self, *args, **kwargs): ...
+
+class Pipeline(Block):
+    def __init__(self, blocks: Iterable[Block | Callable], name: str = ""): ...
+    def run(self, *args, **kwargs) -> Any: ...
+    def run_traced(self, *args, **kwargs) -> PipelineResult: ...
+
+@dataclass(frozen=True)
+class PipelineResult:
+    output: Any
+    steps: Sequence[StepRecord]    # index, block, input_hash, output_hash
+    def trace(self) -> list[dict]: ...
+```
+
+## Result types
+
+```python
+@dataclass(frozen=True)
+class Extraction:
+    value: Any
+    start: int          # code-point offsets of the JSON text
+    end: int
+    source: str         # "whole" | "fence" | "inline"
+    candidates: int
+```
+
+## `beacon.snapshots`
+
+```python
+assert_snapshot(name: str, value: Any, *, input: Any = ..., schema: Mapping | None = None,
+                directory: str | PathLike | None = None,
+                mode: Literal["new", "check", "update"] | None = None) -> None
+snapshot_test = assert_snapshot
+render_snapshot(name, value, *, input=..., schema=None) -> str     # pure: the file's exact text
+to_snapshot_data(value) -> Any
+configure(*, directory=None, mode=None) -> None
+main(argv=None) -> int                                             # python -m beacon.snapshots
+```
+
+## Exceptions
+
+| Exception | Bases | Attributes |
+| --- | --- | --- |
+| `BeaconError` | `Exception` | `code`, `message` |
+| `MalformedOutputError` | `BeaconError`, `ValueError` | `position`, `line`, `column`, `raw` |
+| `NoJSONFoundError` | `MalformedOutputError` | |
+| `NoToolCallFoundError` | `MalformedOutputError` | |
+| `SchemaValidationError` | `BeaconError`, `ValueError` | `errors`, `raw` |
+| `SchemaError` | `BeaconError`, `ValueError` | |
+| `TemplateError` | `BeaconError`, `ValueError` | |
+| `TemplateSyntaxError` | `TemplateError` | `position`, `line`, `column` |
+| `MissingVariableError` | `TemplateError` | `names` |
+| `ExtraVariableError` | `TemplateError` | `names` |
+| `SnapshotMismatchError` | `BeaconError`, `AssertionError` | `path`, `diff` |
+
+All exceptions pickle with their attributes intact.
+
+## Module constants
+
+```python
+beacon.__version__        # '0.1.0'
+beacon.UNICODE_VERSION    # Unicode version of the normalization tables, e.g. '18.0.0'
+```

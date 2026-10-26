@@ -1,0 +1,83 @@
+---
+title: validate_schema
+description: Strict JSON Schema validation with stable messages, a fixed error order and no coercion.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Playground from '../../../components/Playground.astro';
+
+`validate_schema` checks a value against a JSON Schema before you use it. It never coerces types, reports **every** violation in a fixed order, and its messages are part of beacon's compatibility contract, so they're safe to snapshot and to feed back to the model.
+
+```python
+validate_schema(instance, schema) -> None        # raises SchemaValidationError
+schema_errors(instance, schema) -> list[dict]    # [] when valid
+```
+
+```python
+>>> validate_schema({"intent": "explode", "confidence": 1.5}, INTENT)
+SchemaValidationError: 2 schema violations:
+  - /intent: "explode" is not one of ["cancel", "refund", "question"]
+  - /confidence: 1.5 is greater than the maximum of 1
+>>> err.errors
+[{'path': '/intent', 'keyword': 'enum', 'message': '"explode" is not one of [...]'},
+ {'path': '/confidence', 'keyword': 'maximum', 'message': '1.5 is greater than the maximum of 1'}]
+```
+
+## Try it
+
+<Playground ops={['validate_schema']} />
+
+## No coercion
+
+| Value | `{"type": ...}` | Valid? |
+| --- | --- | --- |
+| `"42"` | `number` | no |
+| `True` | `integer` | no (booleans are not numbers) |
+| `1.0` | `integer` | yes (JSON Schema rule) |
+| `10**30` | `integer` | yes (exact) |
+| `(1, 2)` | `array` | yes (tuples are arrays) |
+
+## Supported keywords
+
+beacon implements the JSON Schema 2020-12 subset that LLM apps use, including everything Pydantic's `model_json_schema()` emits:
+
+`$ref` (local `#…` pointers), `$defs`, `definitions`, `type`, `enum`, `const`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`, `minItems`, `maxItems`, `uniqueItems`, `prefixItems`, `items`, `contains`, `minContains`, `maxContains`, `required`, `dependentRequired`, `minProperties`, `maxProperties`, `propertyNames`, `properties`, `patternProperties`, `additionalProperties`, `allOf`, `anyOf`, `oneOf`, `not`, `if`/`then`/`else`, and boolean schemas.
+
+Annotations are ignored: `title`, `description`, `default`, `examples`, `format`, `deprecated`, `readOnly`, `writeOnly`, `$schema`, `$id`, `$comment`, `$anchor`, `contentEncoding`, `contentMediaType`, `contentSchema`, `discriminator`, `$vocabulary`.
+
+<Aside type="caution" title="Unknown keywords are errors">
+Any other keyword raises `SchemaError`, and the whole schema is checked **before** validation, so a bad schema fails for every instance. A typo like `"minLenght"` is reported instead of being silently ignored.
+</Aside>
+
+## Error order
+
+At each node: `$ref` → `type` (on failure, nothing else is checked there) → `enum`, `const` → string/number/array/object keywords → `allOf`, `anyOf`, `oneOf`, `not`, `if`/`then`/`else`.
+
+Object keywords run as `required` → `dependentRequired` → `min/maxProperties` → `propertyNames`, then members in **the instance's key order**. Array items go in index order.
+
+### Unions point at the right branch
+
+When `anyOf`/`oneOf` fails and every branch but one failed only on `type` at the value itself, the remaining branch's errors are reported. That's the branch the value was evidently meant for, as with `Optional[Model]`:
+
+```python
+>>> schema_errors({"user": {"age": "x"}}, OPTIONAL_USER)
+[{'path': '/user/age', 'keyword': 'type', 'message': 'expected type "integer", got "string"'}]
+```
+
+Otherwise you get one summary error: `value does not match any of the 2 subschemas in anyOf`.
+
+## Details
+
+- String lengths count code points.
+- `pattern` uses Rust regex syntax (no look-around or backreferences) and is unanchored, as JSON Schema specifies.
+- `multipleOf` is exact for decimals: `0.3` is a multiple of `0.1`, and `19.99` of `0.01`.
+- `enum`, `const` and `uniqueItems` use JSON equality: `1 == 1.0`, key order is ignored, `True != 1`.
+- Remote `$ref`s are not supported (no I/O, ever). Cyclic refs raise `SchemaError` at the depth limit.
+
+## Errors
+
+| Exception | Code | When |
+| --- | --- | --- |
+| `SchemaValidationError` | `schema.validation_failed` | the instance is invalid; `.errors` lists every violation |
+| `SchemaError` | `schema.invalid` | the schema is invalid or uses an unsupported keyword |
+| `TypeError` | | the instance contains non-JSON types (`set`, `datetime`, non-`str` keys…) |

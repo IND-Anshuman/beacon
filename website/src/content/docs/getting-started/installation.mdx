@@ -1,0 +1,93 @@
+---
+title: Installation
+description: Install beacon from PyPI, add optional integrations, or build from source.
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+beacon ships as **abi3 wheels**: one wheel per platform covers every supported Python version, and you don't need a Rust toolchain.
+
+<Aside type="note" title="Package name vs. import name">
+On PyPI the package is called **`llm-beacon`** (the name `beacon` was taken). You still import it as `beacon`.
+</Aside>
+
+<Tabs syncKey="pkg">
+  <TabItem label="pip">
+    ```bash
+    pip install llm-beacon
+    ```
+  </TabItem>
+  <TabItem label="uv">
+    ```bash
+    uv add llm-beacon
+    ```
+  </TabItem>
+  <TabItem label="poetry">
+    ```bash
+    poetry add llm-beacon
+    ```
+  </TabItem>
+</Tabs>
+
+Check it works:
+
+```python
+>>> import beacon
+>>> beacon.__version__
+'0.1.0'
+>>> beacon.extract_json('Sure! {"ok": true}')
+{'ok': True}
+```
+
+## Requirements
+
+| | Supported |
+| --- | --- |
+| Python | 3.10, 3.11, 3.12, 3.13, 3.14 (CPython) |
+| Operating systems | Linux (x86_64, aarch64, glibc and musl), macOS (Apple silicon, Intel), Windows (x64) |
+| Runtime dependencies | none |
+
+## Optional integrations
+
+The integrations import their framework lazily, so `import beacon` never pulls in LangChain or anything else. Install the extras you need:
+
+```bash
+pip install "llm-beacon[openai]"        # OpenAI SDK helpers (optional, the helpers are duck-typed)
+pip install "llm-beacon[langchain]"     # langchain-core
+pip install "llm-beacon[llamaindex]"    # llama-index-core
+pip install "llm-beacon[pydantic-ai]"   # pydantic-ai
+pip install "llm-beacon[dspy]"          # dspy
+pip install "llm-beacon[test]"          # pytest + pyyaml for the test suite
+```
+
+## Build from source
+
+<Steps>
+
+1. Install Rust (stable) and [maturin](https://www.maturin.rs/):
+
+   ```bash
+   pip install maturin
+   ```
+
+2. Clone the [repository](https://github.com/IND-Anshuman/beacon) and build into a virtual environment:
+
+   ```bash
+   git clone https://github.com/IND-Anshuman/beacon.git
+   cd beacon
+   python -m venv .venv && . .venv/bin/activate
+   maturin develop --release
+   ```
+
+3. Run the test suites:
+
+   ```bash
+   pytest                               # Python + snapshot tests
+   cargo test --no-default-features     # Rust core, no Python needed
+   ```
+
+</Steps>
+
+<Aside type="tip" title="Windows without Visual Studio">
+The default Windows Rust target needs the MSVC linker. If you don't have Visual Studio Build Tools, the Rust GNU toolchain works for local builds; see `CONTRIBUTING.md` in the repository for the exact environment variables.
+</Aside>

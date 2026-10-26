@@ -1,0 +1,58 @@
+---
+title: Pipelines
+description: Compose blocks with Pipeline and Block, and fingerprint every run with a hash trace.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`Pipeline` runs steps in order and feeds each step's output to the next. `run_traced` also records a content hash of every step's input and output, a compact fingerprint of the whole run that you can snapshot.
+
+```python
+from beacon import Block, Pipeline, extract_json, template
+
+class ExtractIntent(Block):
+    def __init__(self, llm):
+        self.llm = llm
+
+    def run(self, message: str) -> dict:
+        prompt = template("Classify as JSON: <msg>{m}</msg>", m=message)
+        return extract_json(self.llm(prompt), schema=INTENT)
+
+def route(intent: dict) -> str:
+    return {"cancel": "retention", "refund": "billing"}.get(intent["intent"], "support")
+
+pipeline = Pipeline([ExtractIntent(llm), route])
+pipeline.run("I want to cancel")          # 'retention'
+```
+
+## Rules
+
+- The first step receives the arguments given to `run`; each later step receives the previous output as its single argument.
+- Steps can be `Block` subclasses (override `run`) or plain callables, which are wrapped automatically.
+- Pipelines nest: a `Pipeline` is itself a `Block`.
+
+## Traces
+
+```python
+>>> result = pipeline.run_traced("I want to cancel")
+>>> result.output
+'retention'
+>>> result.trace()
+[{'index': 0, 'block': 'ExtractIntent', 'input_hash': 'b4f6ee8b23e7441b', 'output_hash': '1f1bc8aeb9db2e0b'},
+ {'index': 1, 'block': 'route', 'input_hash': '1f1bc8aeb9db2e0b', 'output_hash': '052f5628c6167d05'}]
+```
+
+Hashes come from [`hash_content`](../hash-content/), and are `None` for values that aren't JSON-like. With a recorded model response, the trace is fully deterministic:
+
+```python
+from beacon.snapshots import assert_snapshot
+
+def test_cancel_flow():
+    pipeline = Pipeline([ExtractIntent(llm=lambda p: RECORDED), route])
+    result = pipeline.run_traced("I want to cancel")
+    assert_snapshot("flows/cancel", {"output": result.output, "trace": result.trace()})
+```
+
+<Aside type="tip">
+Keep the LLM call inside its own block. Everything around it can then be tested with canned responses, and the trace shows exactly which step changed when a snapshot diff appears.
+</Aside>

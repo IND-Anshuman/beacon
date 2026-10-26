@@ -1,0 +1,66 @@
+---
+title: pytest integration
+description: The snapshot fixture, command-line option, ini setting and CLI.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+beacon registers a pytest plugin automatically when installed (via the `pytest11` entry point). There's nothing to configure.
+
+## The `snapshot` fixture
+
+```python
+def test_parse(snapshot):
+    snapshot(extract_json(RAW))                         # snapshots/<module>/<test>.yaml
+    snapshot(extract_json(RAW2))                        # snapshots/<module>/<test>-2.yaml
+    snapshot(parse_tool_calls(RAW3), name="tools/x")    # explicit name
+```
+
+Names come from the test module and test name (parametrize ids included, sanitized). The fixture accepts the same `input=` and `schema=` arguments as `assert_snapshot`.
+
+## Parametrized corpora
+
+Build a corpus of recorded responses and snapshot them all. This is how beacon tests itself, with more than 100 golden files:
+
+```python
+CORPUS = {
+    "fenced": 'Sure!\n```json\n{"intent": "cancel"}\n```',
+    "citations": 'Per [1]: {"intent": "refund"}',
+    "truncated": '{"intent": "ques',
+}
+
+@pytest.mark.parametrize("case", sorted(CORPUS))
+def test_corpus(case):
+    try:
+        outcome = {"ok": extract_json(CORPUS[case])}
+    except MalformedOutputError as err:
+        outcome = {"error": err}
+    assert_snapshot(f"corpus/{case}", outcome, input=CORPUS[case])
+```
+
+## Where snapshots live
+
+1. `directory=` / `beacon.snapshots.configure(directory=...)`
+2. `beacon_snapshot_dir` in your pytest config, relative to the rootdir:
+
+   ```toml title="pyproject.toml"
+   [tool.pytest.ini_options]
+   beacon_snapshot_dir = "snapshots"
+   ```
+
+3. Otherwise `snapshots/` next to the test file.
+
+## Command line
+
+```bash
+pytest --beacon-snapshot=update     # rewrite snapshots that differ
+pytest --beacon-snapshot=check      # fail on missing or changed snapshots
+python -m beacon.snapshots update   # same as the first, as a CLI
+python -m beacon.snapshots check -k intents   # extra args go to pytest
+```
+
+At the end of a run, pytest prints a summary like `beacon snapshots: 3 written, 1 updated`.
+
+<Aside type="note">
+Without pytest, call `beacon.snapshots.configure(directory=..., mode=...)` once and use `assert_snapshot` anywhere. It raises `SnapshotMismatchError`, a subclass of `AssertionError`.
+</Aside>
