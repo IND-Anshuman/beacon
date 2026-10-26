@@ -1,0 +1,21 @@
+[package]
+name = "beacon-wasm"
+version = "0.1.0"
+edition = "2024"
+description = "WebAssembly bridge to beacon's Rust core, for the docs-site playground"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# The pure-Rust core only: no PyO3.
+beacon = { package = "beacon", path = "../..", default-features = false }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
