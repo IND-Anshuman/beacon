@@ -2,19 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "astro",
   "installCommand": "npm ci",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build && node scripts/nest-dist.mjs",
   "outputDirectory": "dist",
-  "trailingSlash": true,
+  "trailingSlash": false,
   "build": {
     "env": {
       "SITE_URL": "https://www.anshumanbuilds.dev",
       "BASE_PATH": "/beacon"
     }
   },
-  "rewrites": [
-    { "source": "/beacon", "destination": "/" },
-    { "source": "/beacon/:path*", "destination": "/:path*" }
-  ],
   "headers": [
     {
       "source": "/beacon/_astro/:path*",
