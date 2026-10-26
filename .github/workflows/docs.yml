@@ -1,0 +1,69 @@
+name: Docs site
+
+# Builds the documentation site (Astro + Starlight) and the playground's
+# WebAssembly engine, and deploys to GitHub Pages.
+# One-time setup: Settings → Pages → Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths: ["website/**", "src/**", "Cargo.toml", "Cargo.lock", ".github/workflows/docs.yml"]
+  pull_request:
+    paths: ["website/**", "src/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: website/wasm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Install
+        working-directory: website
+        run: npm ci
+      - name: Build playground engine (Rust → WebAssembly)
+        working-directory: website
+        run: npm run wasm
+      - name: Build site
+        working-directory: website
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          PUBLIC_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
