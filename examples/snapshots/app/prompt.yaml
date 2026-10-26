@@ -1,0 +1,3 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: app/prompt
+value: "Classify as JSON: <msg>&lt;b&gt;hi&lt;/b&gt;</msg>"

@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: app/truncated
+input: "{\"intent\": \"question\", \"confid"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.unterminated_string
+    message: "unterminated string (line 1, column 24)"
+    position: 23
+    line: 1
+    column: 24

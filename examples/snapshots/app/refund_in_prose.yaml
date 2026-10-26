@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: app/refund_in_prose
+input: "Per policy [1], this is {\"intent\": \"refund\", \"confidence\": 0.71}."
+value:
+  output:
+    team: billing
+    priority: normal
+  trace:
+    - index: 0
+      block: "build_pipeline.<locals>.classify"
+      input_hash: b3d41a27ab38a1aa
+      output_hash: "0a4333ded106ce26"
+    - index: 1
+      block: "build_pipeline.<locals>.route"
+      input_hash: "0a4333ded106ce26"
+      output_hash: f21257eaf1f25ea1

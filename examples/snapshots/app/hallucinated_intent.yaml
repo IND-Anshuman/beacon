@@ -1,0 +1,14 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: app/hallucinated_intent
+input: "{\"intent\": \"upgrade\", \"confidence\": 0.5}"
+value:
+  error:
+    type: SchemaValidationError
+    code: schema.validation_failed
+    message: |-
+      1 schema violation:
+        - /intent: "upgrade" is not one of ["cancel", "refund", "question"]
+    errors:
+      - path: "/intent"
+        keyword: enum
+        message: "\"upgrade\" is not one of [\"cancel\", \"refund\", \"question\"]"
