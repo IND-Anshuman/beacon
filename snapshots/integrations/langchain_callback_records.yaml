@@ -1,0 +1,27 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: integrations/langchain_callback_records
+value:
+  - text_hash: "45a33134249359e5"
+    json_found: true
+    source: whole
+    valid: true
+    errors: []
+    error_code: null
+  - text_hash: "7f158999216daac1"
+    json_found: true
+    source: whole
+    valid: false
+    errors:
+      - path: ""
+        keyword: required
+        message: "missing required property \"confidence\""
+      - path: "/intent"
+        keyword: type
+        message: "expected type \"string\", got \"integer\""
+    error_code: schema.validation_failed
+  - text_hash: "6c55494ea8ccc721"
+    json_found: false
+    source: null
+    valid: null
+    errors: []
+    error_code: json.not_found
