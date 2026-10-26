@@ -1,0 +1,826 @@
+---
+import { DEFAULTS, OPS } from '../scripts/playground-config';
+import { url } from '../site';
+
+interface Props {
+  /** Op ids to show (default: all). */
+  ops?: string[];
+  initial?: string;
+}
+const { ops, initial } = Astro.props;
+const shown = ops ? OPS.filter((o) => ops.includes(o.id)) : OPS;
+const first = initial ?? shown[0].id;
+const single = shown.length === 1;
+---
+
+<div class="pg" data-pg data-wasm={url('/beacon.wasm')} data-initial={first}>
+  {
+    !single && (
+      <div class="pg-tabs" role="tablist" aria-label="beacon blocks">
+        {shown.map((op) => (
+          <button role="tab" class="pg-tab" data-tab={op.id} aria-selected={op.id === first ? 'true' : 'false'}>
+            {op.label}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  <div class="pg-body">
+    <div class="pg-in">
+      {
+        shown.map((op) => (
+          <div class="pg-op" data-op={op.id} hidden={op.id !== first}>
+            <p class="pg-blurb">{op.blurb}</p>
+            <div class="pg-presets" aria-label="Examples">
+              {op.presets.map((p, i) => (
+                <button type="button" class="chip" data-preset={i}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div class="pg-fields">
+              {op.fields.map((f) => {
+                const preset = op.presets[0].values;
+                const value = preset[f.key] ?? DEFAULTS[f.key] ?? '';
+                if (f.kind === 'textarea')
+                  return (
+                    <label class="field wide">
+                      <span>{f.label}</span>
+                      <textarea data-field={f.key} rows={f.rows ?? 6} spellcheck="false" autocomplete="off">{String(value)}</textarea>
+                    </label>
+                  );
+                if (f.kind === 'select')
+                  return (
+                    <label class="field">
+                      <span>{f.label}</span>
+                      <select data-field={f.key}>
+                        {f.options?.map((o) => (
+                          <option value={o} selected={o === value}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  );
+                if (f.kind === 'checkbox')
+                  return (
+                    <label class="field check">
+                      <input type="checkbox" data-field={f.key} checked={Boolean(value)} />
+                      <span>{f.label}</span>
+                    </label>
+                  );
+                return (
+                  <label class="field">
+                    <span>{f.label}</span>
+                    <input type="text" data-field={f.key} value={String(value)} spellcheck="false" />
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="pg-out" aria-live="polite">
+      <div class="pg-out-head">
+        <span class="pg-out-title">Output</span>
+        <code class="pg-py" data-py></code>
+      </div>
+      <div class="pg-result" data-result>
+        <div class="pg-loading"><span class="spinner"></span> Loading beacon's Rust core (WebAssembly)…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pg-status">
+    <span class="pg-state" data-state>Idle</span>
+    <span class="sep"></span>
+    <span class="pg-engine">Same Rust core as the Python package, compiled to WebAssembly</span>
+    <button type="button" class="pg-runmany" data-runmany>Run 1,000×</button>
+  </div>
+</div>
+
+<style>
+  .pg {
+    --pg-bg: var(--sl-color-gray-6, var(--panel));
+    --pg-line: var(--sl-color-hairline-light, var(--line-2));
+    --pg-text: var(--sl-color-white, var(--text));
+    --pg-muted: var(--sl-color-gray-3, var(--muted));
+    --pg-accent: var(--sl-color-accent, var(--amber));
+    --pg-mono: var(--sl-font-mono, var(--mono));
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid var(--pg-line);
+    background: var(--pg-bg);
+    overflow: hidden;
+    box-shadow: 0 40px 100px -60px rgba(0, 0, 0, 0.9);
+    text-align: left;
+    font-size: 0.92rem;
+    color: var(--pg-text);
+  }
+  .pg-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 8px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--pg-line);
+    scrollbar-width: none;
+  }
+  .pg-tab {
+    flex: none;
+    border: 0;
+    background: transparent;
+    color: var(--pg-muted);
+    font: 500 0.82rem var(--pg-mono);
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
+  }
+  .pg-tab:hover {
+    color: var(--pg-text);
+  }
+  .pg-tab[aria-selected='true'] {
+    color: var(--pg-accent);
+    background: color-mix(in srgb, var(--pg-accent) 12%, transparent);
+  }
+  .pg-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    min-height: 430px;
+  }
+  @media (max-width: 860px) {
+    .pg-body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .pg-in {
+    padding: 18px;
+    border-right: 1px solid var(--pg-line);
+  }
+  @media (max-width: 860px) {
+    .pg-in {
+      border-right: 0;
+      border-bottom: 1px solid var(--pg-line);
+    }
+  }
+  .pg-blurb {
+    margin: 0 0 12px;
+    color: var(--pg-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .pg-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .chip {
+    border: 1px solid var(--pg-line);
+    background: transparent;
+    color: var(--pg-text);
+    font: 500 0.76rem var(--sl-font, var(--sans));
+    padding: 0.32rem 0.7rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .chip:hover,
+  .chip[aria-pressed='true'] {
+    border-color: var(--pg-accent);
+    color: var(--pg-accent);
+  }
+  .pg-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 120px;
+    flex: 1;
+  }
+  .field.wide {
+    flex-basis: 100%;
+  }
+  .field > span {
+    font: 500 0.7rem var(--pg-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pg-muted);
+  }
+  .field.check {
+    flex-direction: row;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 7px;
+    padding-top: 18px;
+  }
+  .field.check > span {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.78rem;
+    color: var(--pg-text);
+  }
+  textarea,
+  select,
+  input[type='text'] {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--pg-line);
+    background: #0c0f16;
+    color: #e6e8ee;
+    font: 0.8rem/1.6 var(--pg-mono);
+    padding: 10px 12px;
+    resize: vertical;
+    transition: border-color 0.15s ease;
+  }
+  select,
+  input[type='text'] {
+    padding: 7px 10px;
+  }
+  textarea:focus,
+  select:focus,
+  input:focus {
+    outline: none;
+    border-color: var(--pg-accent);
+  }
+  input[type='checkbox'] {
+    accent-color: var(--pg-accent);
+    width: 15px;
+    height: 15px;
+  }
+
+  .pg-out {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #0a0d13;
+    color: #e6e8ee;
+  }
+  .pg-out-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .pg-out-title {
+    font: 600 0.7rem var(--pg-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8a93a3;
+  }
+  .pg-py {
+    margin-left: auto;
+    max-width: 75%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 0.72rem var(--pg-mono);
+    color: #7d8696;
+    background: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+  .pg-result {
+    flex: 1;
+    padding: 16px 18px 20px;
+    overflow: auto;
+    max-height: 520px;
+  }
+  .pg-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #8a93a3;
+    font-size: 0.85rem;
+  }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 99px;
+    border: 2px solid rgba(255, 181, 71, 0.25);
+    border-top-color: #ffb547;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  .pg-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 10px 14px 10px 18px;
+    border-top: 1px solid var(--pg-line);
+    font-size: 0.78rem;
+    color: var(--pg-muted);
+  }
+  .pg-state {
+    font-family: var(--pg-mono);
+    color: var(--pg-text);
+  }
+  .sep {
+    width: 4px;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--pg-line);
+  }
+  .pg-runmany {
+    margin-left: auto;
+    border: 1px solid color-mix(in srgb, var(--pg-accent) 50%, transparent);
+    background: color-mix(in srgb, var(--pg-accent) 10%, transparent);
+    color: var(--pg-accent);
+    font: 600 0.76rem var(--pg-mono);
+    padding: 0.38rem 0.8rem;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .pg-runmany:hover {
+    background: color-mix(in srgb, var(--pg-accent) 18%, transparent);
+  }
+  .pg-runmany:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  @media (max-width: 640px) {
+    .pg-engine,
+    .sep {
+      display: none;
+    }
+  }
+
+  /* ---- rendered output (generated by the script) ---- */
+  .pg-result :global(pre) {
+    margin: 0;
+    font: 0.8rem/1.65 var(--pg-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #e6e8ee;
+    background: transparent;
+    padding: 0;
+    border: 0;
+  }
+  .pg-result :global(.k) {
+    color: #7dd3fc;
+  }
+  .pg-result :global(.s) {
+    color: #ffd27a;
+  }
+  .pg-result :global(.n) {
+    color: #c4b5fd;
+  }
+  .pg-result :global(.b) {
+    color: #ff9e64;
+  }
+  .pg-result :global(.meta) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .pg-result :global(.tag) {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font: 0.72rem var(--pg-mono);
+    color: #b4bbc8;
+  }
+  .pg-result :global(.tag b) {
+    color: #f1f3f7;
+    font-weight: 600;
+  }
+  .pg-result :global(.tag.ok) {
+    border-color: rgba(94, 224, 168, 0.4);
+    color: #5ee0a8;
+  }
+  .pg-result :global(.tag.bad) {
+    border-color: rgba(255, 122, 122, 0.45);
+    color: #ff9a9a;
+  }
+  .pg-result :global(.tag.amber) {
+    border-color: rgba(255, 181, 71, 0.45);
+    color: #ffc56b;
+  }
+  .pg-result :global(.err-msg) {
+    margin: 4px 0 14px;
+    font-size: 0.92rem;
+    color: #ffd0d0;
+  }
+  .pg-result :global(.caret) {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(255, 122, 122, 0.06);
+    border: 1px solid rgba(255, 122, 122, 0.2);
+    overflow-x: auto;
+  }
+  .pg-result :global(.caret pre) {
+    white-space: pre;
+  }
+  .pg-result :global(.caret .ln) {
+    color: #5c6576;
+    user-select: none;
+  }
+  .pg-result :global(.caret .mark) {
+    color: #ff7a7a;
+    font-weight: 700;
+  }
+  .pg-result :global(.hit) {
+    background: rgba(255, 181, 71, 0.16);
+    color: #ffd27a;
+    border-radius: 4px;
+    padding: 0 3px;
+    box-shadow: inset 0 0 0 1px rgba(255, 181, 71, 0.35);
+  }
+  .pg-result :global(.call) {
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .pg-result :global(.call-head) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .pg-result :global(.call-name) {
+    font: 600 0.9rem var(--pg-mono);
+    color: #fff;
+  }
+  .pg-result :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .pg-result :global(td),
+  .pg-result :global(th) {
+    padding: 7px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: left;
+    vertical-align: top;
+  }
+  .pg-result :global(th) {
+    font: 500 0.68rem var(--pg-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7d8696;
+  }
+  .pg-result :global(td code) {
+    font: 0.76rem var(--pg-mono);
+    color: #7dd3fc;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .pg-result :global(.digest) {
+    font: 600 clamp(1.3rem, 3.2vw, 1.9rem) var(--pg-mono);
+    letter-spacing: 0.02em;
+    color: #ffd27a;
+    word-break: break-all;
+    text-shadow: 0 0 30px rgba(255, 181, 71, 0.35);
+  }
+  .pg-result :global(.hint) {
+    margin-top: 14px;
+    color: #8a93a3;
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  .pg-result :global(.bar) {
+    height: 8px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #ffc56b, #ff9a1f);
+    min-width: 2px;
+    transition: width 0.4s ease;
+  }
+  .pg-result :global(.empty) {
+    color: #8a93a3;
+  }
+</style>
+
+<script>
+  import { DEFAULTS, OPS, type Op, type Values } from '../scripts/playground-config';
+
+  type Exports = {
+    memory: WebAssembly.Memory;
+    alloc(len: number): number;
+    dealloc(ptr: number, len: number): void;
+    call(ptr: number, len: number): bigint;
+  };
+
+  let engine: Promise<Exports> | null = null;
+  function load(src: string): Promise<Exports> {
+    engine ??= (async () => {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error(`could not load ${src} (${res.status})`);
+      const mod =
+        'instantiateStreaming' in WebAssembly && res.headers.get('content-type')?.includes('wasm')
+          ? await WebAssembly.instantiateStreaming(res, {})
+          : await WebAssembly.instantiate(await res.arrayBuffer(), {});
+      return mod.instance.exports as unknown as Exports;
+    })();
+    return engine;
+  }
+
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+  function callRaw(ex: Exports, req: Record<string, unknown>): string {
+    const bytes = enc.encode(JSON.stringify(req));
+    const ptr = ex.alloc(bytes.length);
+    new Uint8Array(ex.memory.buffer, ptr, bytes.length).set(bytes);
+    const packed = ex.call(ptr, bytes.length);
+    ex.dealloc(ptr, bytes.length);
+    const rp = Number(packed >> 32n);
+    const rl = Number(packed & 0xffffffffn);
+    const out = dec.decode(new Uint8Array(ex.memory.buffer, rp, rl));
+    ex.dealloc(rp, rl);
+    return out;
+  }
+
+  // ---------------------------------------------------------------- formatting
+
+  const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  /** Pretty-prints JSON text without re-parsing it, so key order is exact. */
+  function prettyJson(raw: string): string {
+    let out = '';
+    let indent = 0;
+    let i = 0;
+    const pad = () => '\n' + '  '.repeat(indent);
+    const skipWs = () => {
+      while (raw[i] === ' ' || raw[i] === '\n') i++;
+    };
+    while (i < raw.length) {
+      const c = raw[i];
+      if (c === '"') {
+        let j = i + 1;
+        while (j < raw.length && raw[j] !== '"') j += raw[j] === '\\' ? 2 : 1;
+        const str = raw.slice(i, j + 1);
+        i = j + 1;
+        let k = i;
+        while (raw[k] === ' ') k++;
+        out += `<span class="${raw[k] === ':' ? 'k' : 's'}">${esc(str)}</span>`;
+      } else if (c === '{' || c === '[') {
+        const close = c === '{' ? '}' : ']';
+        let k = i + 1;
+        while (raw[k] === ' ') k++;
+        if (raw[k] === close) {
+          out += c + close;
+          i = k + 1;
+        } else {
+          indent++;
+          out += c + pad();
+          i++;
+          skipWs();
+        }
+      } else if (c === '}' || c === ']') {
+        indent--;
+        out += pad() + c;
+        i++;
+      } else if (c === ',') {
+        out += ',' + pad();
+        i++;
+        skipWs();
+      } else if (c === ':') {
+        out += ': ';
+        i++;
+        skipWs();
+      } else if (c === ' ' || c === '\n') {
+        i++;
+      } else {
+        let j = i;
+        while (j < raw.length && !',}] \n'.includes(raw[j])) j++;
+        const lit = raw.slice(i, j);
+        i = j;
+        out += `<span class="${/^[-\d]/.test(lit) ? 'n' : 'b'}">${esc(lit)}</span>`;
+      }
+    }
+    return `<pre>${out}</pre>`;
+  }
+
+  /** The text of the `"ok"` payload inside `{"ok": ...}`. */
+  const okText = (raw: string) => raw.slice(7, -1);
+
+  function caretExcerpt(text: string, line: number, column: number): string {
+    const lines = text.split('\n');
+    const from = Math.max(0, line - 3);
+    const width = String(line).length + 1;
+    let out = '';
+    for (let n = from; n < line && n < lines.length; n++) {
+      out += `<span class="ln">${String(n + 1).padStart(width)} │ </span>${esc(lines[n])}\n`;
+    }
+    out += `<span class="ln">${' '.repeat(width)} │ </span>${' '.repeat(Math.max(0, column - 1))}<span class="mark">^</span>`;
+    return `<div class="caret"><pre>${out}</pre></div>`;
+  }
+
+  // ---------------------------------------------------------------- renderers
+
+  function renderError(err: any, op: Op, values: Values): string {
+    let html = `<div class="meta"><span class="tag bad">${esc(err.kind)}</span><span class="tag"><b>code</b> ${esc(err.code)}</span></div>`;
+    html += `<p class="err-msg">${esc(err.message)}</p>`;
+    if (err.position) {
+      let target = op.fields.find((f) => f.positionTarget)?.key ?? 'text';
+      const m = /^(\w+): /.exec(err.message);
+      if (m && op.fields.some((f) => f.key === m[1])) target = m[1];
+      if (op.id === 'template' && m?.[1] === 'variables') target = 'variables';
+      const text = String(values[target] ?? '');
+      html += caretExcerpt(text, err.position.line, err.position.column);
+      html += `<p class="hint">Position: char ${err.position.offset} (line ${err.position.line}, column ${err.position.column}). Offsets count code points, exactly like Python string indexing.</p>`;
+    }
+    return html;
+  }
+
+  function renderOk(op: Op, raw: string, values: Values): string {
+    const body = okText(raw);
+    const data = JSON.parse(body);
+    switch (op.render) {
+      case 'extract': {
+        const cut = body.lastIndexOf(', "start": ');
+        const valueText = body.slice('{"value": '.length, cut);
+        return (
+          `<div class="meta"><span class="tag ok">✓ extracted</span><span class="tag"><b>source</b> ${esc(data.source)}</span>` +
+          `<span class="tag"><b>span</b> ${data.start}–${data.end}</span><span class="tag"><b>candidates</b> ${data.candidates}</span></div>` +
+          prettyJson(valueText)
+        );
+      }
+      case 'tools':
+        return (
+          `<div class="meta"><span class="tag ok">✓ ${data.length} call${data.length === 1 ? '' : 's'}</span></div>` +
+          data
+            .map(
+              (c: any) =>
+                `<div class="call"><div class="call-head"><span class="call-name">${esc(c.name)}</span><span class="tag amber">${esc(c.format)}</span></div>${prettyJson(JSON.stringify(c.arguments))}</div>`,
+            )
+            .join('')
+        );
+      case 'validate':
+        if (data.valid) return `<div class="meta"><span class="tag ok">✓ valid</span></div><p class="hint">validate_schema() returns None.</p>`;
+        return (
+          `<div class="meta"><span class="tag bad">SchemaValidationError</span><span class="tag"><b>${data.errors.length}</b> violation${data.errors.length === 1 ? '' : 's'}</span></div>` +
+          `<table><thead><tr><th>path</th><th>keyword</th><th>message</th></tr></thead><tbody>` +
+          data.errors
+            .map((e: any) => `<tr><td><code>${esc(e.path || '(root)')}</code></td><td>${esc(e.keyword)}</td><td>${esc(e.message)}</td></tr>`)
+            .join('') +
+          `</tbody></table><p class="hint">Errors come in a fixed, documented order: type, then enum/const, then constraints, with object members in the instance's key order.</p>`
+        );
+      case 'template':
+      case 'normalize':
+        return `<div class="meta"><span class="tag ok">✓ ${op.render === 'template' ? 'rendered' : 'normalized'}</span><span class="tag"><b>${[...data].length}</b> chars</span></div><pre>${esc(data) || '<span class="empty">(empty string)</span>'}</pre>`;
+      case 'redact': {
+        const redacted = esc(data.redacted).replace(/\[REDACTED:[a-z_0-9]+\]|&lt;[a-z_0-9]+:[0-9a-f]{8}&gt;|\*\*\*/g, (m) => `<span class="hit">${m}</span>`);
+        const rows = data.findings
+          .map((f: any) => `<tr><td><code>${esc(f.label)}</code></td><td>${f.start}–${f.end}</td><td>${esc(f.text)}</td></tr>`)
+          .join('');
+        return (
+          `<div class="meta"><span class="tag ok">✓ ${data.findings.length} finding${data.findings.length === 1 ? '' : 's'}</span></div><pre>${redacted}</pre>` +
+          (rows ? `<table style="margin-top:16px"><thead><tr><th>label</th><th>span</th><th>text</th></tr></thead><tbody>${rows}</tbody></table>` : '')
+        );
+      }
+      case 'hash':
+        return `<div class="meta"><span class="tag ok">✓ blake3 · 16 hex</span></div><div class="digest">${esc(data)}</div><p class="hint">Python's <code>beacon.hash_content(value)</code> returns this exact digest. Try the presets: reordering keys keeps the hash; changing <code>0.93</code> to <code>"0.93"</code> changes it.</p>`;
+      case 'retry': {
+        const max = Math.max(1, ...data.schedule.map((s: any) => s.delay_ms));
+        const rows = data.schedule
+          .map(
+            (s: any) =>
+              `<tr><td>${s.attempt}</td><td><span class="tag ${s.action === 'retry' ? 'ok' : 'bad'}">${s.action}</span></td><td style="width:45%"><div class="bar" style="width:${(s.delay_ms / max) * 100}%"></div></td><td>${(s.delay_ms / 1000).toFixed(3)}s</td></tr>`,
+          )
+          .join('');
+        return (
+          `<div class="meta"><span class="tag ${data.retryable ? 'ok' : 'bad'}">${data.retryable ? 'retryable' : 'not retryable'}</span><span class="tag"><b>reason</b> ${esc(data.reason)}</span></div>` +
+          `<table><thead><tr><th>attempt</th><th>action</th><th>delay</th><th></th></tr></thead><tbody>${rows}</tbody></table>` +
+          `<p class="hint">Change the jitter key and the delays change. Keep it and they never do: jitter = blake3(key ‖ attempt).</p>`
+        );
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- wiring
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-pg]')) {
+    const resultEl = root.querySelector<HTMLElement>('[data-result]')!;
+    const stateEl = root.querySelector<HTMLElement>('[data-state]')!;
+    const pyEl = root.querySelector<HTMLElement>('[data-py]')!;
+    const manyBtn = root.querySelector<HTMLButtonElement>('[data-runmany]')!;
+    let current = OPS.find((o) => o.id === root.dataset.initial) ?? OPS[0];
+    let ex: Exports | null = null;
+    let timer = 0;
+
+    const panel = () => root.querySelector<HTMLElement>(`[data-op="${current.id}"]`)!;
+    const values = (): Values => {
+      const v: Values = { ...DEFAULTS };
+      panel()
+        .querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[data-field]')
+        .forEach((el) => {
+          v[el.dataset.field!] = el instanceof HTMLInputElement && el.type === 'checkbox' ? el.checked : el.value;
+        });
+      return v;
+    };
+
+    const run = () => {
+      const v = values();
+      pyEl.textContent = current.python(v);
+      if (!ex) return;
+      const t0 = performance.now();
+      const raw = callRaw(ex, current.request(v));
+      const dt = performance.now() - t0;
+      const isErr = raw.startsWith('{"error"');
+      resultEl.innerHTML = isErr ? renderError(JSON.parse(raw).error, current, v) : renderOk(current, raw, v);
+      stateEl.textContent = `${isErr ? '✕ raised' : '✓ ok'} · ${dt < 1 ? `${Math.max(1, Math.round(dt * 1000))} µs` : `${dt.toFixed(2)} ms`}`;
+      stateEl.style.color = isErr ? '#ff9a9a' : '';
+    };
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(run, 120);
+    };
+
+    const applyPreset = (op: Op, index: number) => {
+      const p = op.presets[index];
+      const el = root.querySelector<HTMLElement>(`[data-op="${op.id}"]`)!;
+      el.querySelectorAll<HTMLElement>('[data-preset]').forEach((b) =>
+        b.setAttribute('aria-pressed', String(Number(b.dataset.preset) === index)),
+      );
+      el.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[data-field]').forEach((f) => {
+        const key = f.dataset.field!;
+        const val = p.values[key] ?? DEFAULTS[key];
+        if (val === undefined) return;
+        if (f instanceof HTMLInputElement && f.type === 'checkbox') f.checked = Boolean(val);
+        else f.value = String(val);
+      });
+      run();
+    };
+
+    root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((tab) =>
+      tab.addEventListener('click', () => {
+        current = OPS.find((o) => o.id === tab.dataset.tab)!;
+        root.querySelectorAll('[data-tab]').forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+        root.querySelectorAll<HTMLElement>('[data-op]').forEach((p) => (p.hidden = p.dataset.op !== current.id));
+        run();
+      }),
+    );
+    root.querySelectorAll<HTMLElement>('[data-op]').forEach((p) => {
+      const op = OPS.find((o) => o.id === p.dataset.op)!;
+      p.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) =>
+        b.addEventListener('click', () => applyPreset(op, Number(b.dataset.preset))),
+      );
+      p.querySelectorAll('[data-field]').forEach((f) => {
+        f.addEventListener('input', schedule);
+        f.addEventListener('change', schedule);
+      });
+      p.querySelector('[data-preset="0"]')?.setAttribute('aria-pressed', 'true');
+    });
+
+    manyBtn.addEventListener('click', () => {
+      if (!ex) return;
+      const req = current.request(values());
+      const n = 1000;
+      const seen = new Set<string>();
+      const t0 = performance.now();
+      for (let i = 0; i < n; i++) seen.add(callRaw(ex, req));
+      const dt = performance.now() - t0;
+      stateEl.style.color = seen.size === 1 ? '#5ee0a8' : '#ff9a9a';
+      stateEl.textContent = `${n.toLocaleString('en-US')} runs · ${seen.size} unique output${seen.size === 1 ? '' : 's'} · ${dt.toFixed(1)} ms (${((dt / n) * 1000).toFixed(1)} µs/run)`;
+    });
+
+    // Load lazily, the first time the playground comes near the viewport.
+    const start = () =>
+      load(root.dataset.wasm!)
+        .then((e) => {
+          ex = e;
+          run();
+        })
+        .catch((err) => {
+          resultEl.innerHTML = `<p class="err-msg">Could not load the WebAssembly engine: ${esc(String(err.message ?? err))}</p><p class="hint">Run <code>npm run wasm</code> in <code>website/</code> to build it.</p>`;
+          stateEl.textContent = 'unavailable';
+          manyBtn.disabled = true;
+        });
+    pyEl.textContent = current.python(values());
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          start();
+        }
+      },
+      { rootMargin: '400px' },
+    );
+    io.observe(root);
+  }
+</script>

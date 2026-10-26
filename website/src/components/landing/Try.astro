@@ -1,0 +1,58 @@
+---
+import Playground from '../Playground.astro';
+import { url } from '../../site';
+---
+
+<section class="section try" id="playground">
+  <div class="container">
+    <div class="section-head center" data-reveal>
+      <span class="eyebrow">Live playground</span>
+      <h2>Try the real engine. <em>In your browser.</em></h2>
+      <p>
+        This isn't a mock. beacon's Rust core is compiled to WebAssembly and runs right here, the same code the Python
+        package runs. Break the JSON, hit <strong>Run 1,000×</strong>, and count the unique outputs.
+      </p>
+    </div>
+    <div class="frame" data-reveal>
+      <Playground />
+    </div>
+    <p class="more" data-reveal><a href={url('/playground/')}>Open the full-screen playground →</a></p>
+  </div>
+</section>
+
+<style>
+  .frame {
+    position: relative;
+  }
+  .frame::before {
+    content: '';
+    position: absolute;
+    inset: -40px -20px;
+    z-index: -1;
+    background: radial-gradient(60% 50% at 50% 50%, var(--amber-glow), transparent 70%);
+    filter: blur(20px);
+  }
+  .frame :global(.pg) {
+    --sl-color-gray-6: var(--panel);
+    --sl-color-hairline-light: var(--line-2);
+    --sl-color-white: var(--text);
+    --sl-color-gray-3: var(--muted);
+    --sl-color-accent: var(--amber);
+  }
+  .section-head strong {
+    color: var(--text);
+  }
+  .more {
+    margin-top: 22px;
+    text-align: center;
+  }
+  .more a {
+    color: var(--amber);
+    text-decoration: none;
+    font-weight: 560;
+  }
+  .more a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style>

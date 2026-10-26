@@ -1,0 +1,39 @@
+---
+// Overrides Starlight's site title: logo + wordmark + version pill, linking to the landing page.
+import logo from '../../assets/logo.svg?raw';
+import { SITE, url } from '../../site';
+---
+
+<a href={url('/')} class="site-title" aria-label="beacon home">
+  <span class="mark" set:html={logo} />
+  <span class="word">beacon</span>
+  <span class="ver">v{SITE.version}</span>
+</a>
+
+<style>
+  .site-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: var(--sl-color-white);
+    font-weight: 650;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+  }
+  .mark :global(svg) {
+    width: 1.65rem;
+    height: 1.65rem;
+    display: block;
+    filter: drop-shadow(0 0 10px rgba(255, 181, 71, 0.35));
+  }
+  .ver {
+    font-family: var(--sl-font-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    color: var(--sl-color-gray-3);
+    border: 1px solid var(--sl-color-hairline-light);
+  }
+</style>

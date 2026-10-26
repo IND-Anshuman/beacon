@@ -1,0 +1,74 @@
+---
+import { url } from '../../site';
+
+const items = [
+  { name: 'OpenAI SDK', api: 'validated_completion()', slug: 'openai', note: 'sync + async, tool calls' },
+  { name: 'LangChain', api: 'BeaconJsonOutputParser', slug: 'langchain', note: 'parser, prompt, callbacks' },
+  { name: 'LlamaIndex', api: 'BeaconOutputParser', slug: 'llamaindex', note: 'query-engine output parsing' },
+  { name: 'Pydantic AI', api: 'BeaconValidator', slug: 'pydantic-ai', note: 'ModelRetry with stable feedback' },
+  { name: 'DSPy', api: 'BeaconJSONAdapter', slug: 'dspy', note: 'strict adapter + validator' },
+];
+---
+
+<section class="section integ">
+  <div class="container">
+    <div class="section-head center" data-reveal>
+      <span class="eyebrow">Integrations</span>
+      <h2>Works with the stack <em>you already have.</em></h2>
+      <p>Drop-in parsers and validators for the frameworks you use. Optional, lazily imported, and tested against the real libraries.</p>
+    </div>
+    <div class="row" data-spotlight>
+      {
+        items.map((it, i) => (
+          <a class="card item" href={url(`/integrations/${it.slug}/`)} data-reveal style={`--d:${i * 60}ms`}>
+            <span class="name">{it.name}</span>
+            <code>{it.api}</code>
+            <span class="note">{it.note}</span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 1000px) {
+    .row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 520px) {
+    .row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 20px;
+    text-decoration: none;
+    overflow: hidden;
+  }
+  .item:hover {
+    transform: translateY(-3px);
+  }
+  .name {
+    font-weight: 620;
+    font-size: 1.06rem;
+    letter-spacing: -0.02em;
+  }
+  code {
+    font: 0.76rem var(--mono);
+    color: var(--amber);
+  }
+  .note {
+    font-size: 0.84rem;
+    color: var(--muted);
+  }
+</style>

@@ -1,0 +1,156 @@
+---
+import { url } from '../../site';
+
+const blocks = [
+  {
+    name: 'template',
+    slug: 'template',
+    desc: 'Prompt rendering that escapes input and refuses missing or unused variables.',
+    code: `template("<msg>{m}</msg>", m="</msg>hi")
+→ '<msg>&lt;/msg&gt;hi</msg>'`,
+  },
+  {
+    name: 'extract_json',
+    slug: 'extract-json',
+    desc: 'Finds the JSON in fences or prose. Strict parsing, exact error positions.',
+    code: `extract_json('Sure! {"a": 1} Done.')
+→ {'a': 1}`,
+  },
+  {
+    name: 'parse_tool_call',
+    slug: 'parse-tool-call',
+    desc: 'Hermes, Mistral, Llama, OpenAI, Anthropic, XML and Python call syntax.',
+    code: `parse_tool_call('search(q="rust", n=5)')
+→ {'name': 'search', 'arguments': {...}}`,
+  },
+  {
+    name: 'validate_schema',
+    slug: 'validate-schema',
+    desc: 'JSON Schema with stable messages, a fixed error order and no coercion.',
+    code: `validate_schema({"n": "5"}, schema)
+→ /n: expected type "integer", got "string"`,
+  },
+  {
+    name: 'normalize',
+    slug: 'normalize',
+    desc: 'NFKC, whitespace, zero-width and control-character cleanup, locale-independent.',
+    code: `normalize("Café\\u200b  CRÈME", strip_accents=True)
+→ 'Cafe CREME'`,
+  },
+  {
+    name: 'hash_content',
+    slug: 'hash-content',
+    desc: 'Type-aware BLAKE3 hashes. Dict key order never matters.',
+    code: `hash_content({"b": 2, "a": 1})
+→ same as hash_content({"a": 1, "b": 2})`,
+  },
+  {
+    name: 'redact',
+    slug: 'redact',
+    desc: 'Emails, phones, Luhn-checked cards, API keys, JWTs, private keys, IPs.',
+    code: `redact("mail a@b.co, key sk-proj-…")
+→ 'mail [REDACTED:email], key [REDACTED:api_key]'`,
+  },
+  {
+    name: 'retry',
+    slug: 'retry',
+    desc: 'Typed retry-or-fail decisions with deterministic, Retry-After-aware backoff.',
+    code: `retry.classify(RateLimitError(...))
+→ RetryDecision(action=RETRY, ...)`,
+  },
+];
+---
+
+<section class="section blocks" id="blocks">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Building blocks</span>
+      <h2>Eight blocks. <em>One contract.</em></h2>
+      <p>
+        Plain functions written in Rust, not a framework. Use one, or all eight. Every block has its own edge-case test
+        suite and golden snapshots.
+      </p>
+    </div>
+
+    <div class="grid" data-spotlight>
+      {
+        blocks.map((b, i) => (
+          <a class="card block" href={url(`/blocks/${b.slug}/`)} data-reveal style={`--d:${(i % 4) * 60}ms`}>
+            <div class="top">
+              <code class="name">{b.name}</code>
+              <span class="arrow" aria-hidden="true">
+                ↗
+              </span>
+            </div>
+            <p>{b.desc}</p>
+            <pre class="snip">{b.code}</pre>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  @media (max-width: 1100px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .block {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 20px 18px;
+    text-decoration: none;
+    overflow: hidden;
+  }
+  .block:hover {
+    transform: translateY(-3px);
+  }
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .name {
+    font: 600 0.98rem var(--mono);
+    color: var(--text);
+  }
+  .arrow {
+    color: var(--muted);
+    transition:
+      transform 0.25s ease,
+      color 0.25s ease;
+  }
+  .block:hover .arrow {
+    color: var(--amber);
+    transform: translate(2px, -2px);
+  }
+  p {
+    margin: 0.7rem 0 1rem;
+    font-size: 0.92rem;
+    color: var(--text-2);
+    flex: 1;
+  }
+  .snip {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: var(--code-bg);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #c9ced8;
+    font: 0.72rem/1.6 var(--mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>

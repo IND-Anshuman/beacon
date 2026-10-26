@@ -1,0 +1,77 @@
+---
+import Nav from '../components/landing/Nav.astro';
+import Landing from '../layouts/Landing.astro';
+import { url } from '../site';
+---
+
+<Landing title="Page not found — beacon" description="This page does not exist.">
+  <Nav />
+  <main class="nf">
+    <div class="beam" aria-hidden="true"></div>
+    <div class="container">
+      <p class="code">404</p>
+      <h1>Not deterministic <span class="serif">enough.</span></h1>
+      <p class="lead">
+        Every other input to beacon gives the same output. This URL gives nothing. It may have moved, or never existed.
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" href={url('/getting-started/introduction/')}>Read the docs</a>
+        <a class="btn btn-ghost" href={url('/')}>Home</a>
+        <a class="btn btn-ghost" href={url('/playground/')}>Playground</a>
+      </div>
+    </div>
+  </main>
+</Landing>
+
+<style>
+  .nf {
+    position: relative;
+    overflow: hidden;
+    min-height: calc(100vh - 64px);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 80px 0;
+    isolation: isolate;
+  }
+  .beam {
+    position: absolute;
+    left: 50%;
+    top: -30%;
+    width: 1600px;
+    height: 1600px;
+    translate: -50% 0;
+    z-index: -1;
+    background: conic-gradient(from 165deg at 50% 0%, transparent 0deg, rgba(255, 181, 71, 0.2) 15deg, transparent 30deg);
+    -webkit-mask-image: radial-gradient(closest-side, #000, transparent);
+    mask-image: radial-gradient(closest-side, #000, transparent);
+  }
+  .code {
+    margin: 0;
+    font: 600 0.9rem var(--mono);
+    letter-spacing: 0.3em;
+    color: var(--amber);
+  }
+  h1 {
+    margin: 0.8rem 0 1rem;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    letter-spacing: -0.045em;
+    line-height: 1;
+    font-weight: 650;
+  }
+  h1 .serif {
+    color: var(--amber);
+  }
+  .lead {
+    max-width: 34rem;
+    margin: 0 auto 2rem;
+    color: var(--text-2);
+    font-size: 1.08rem;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+</style>

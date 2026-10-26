@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "astro",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "trailingSlash": true,
+  "build": {
+    "env": {
+      "SITE_URL": "https://www.anshumanbuilds.dev",
+      "BASE_PATH": "/beacon"
+    }
+  },
+  "rewrites": [
+    { "source": "/beacon", "destination": "/" },
+    { "source": "/beacon/:path*", "destination": "/:path*" }
+  ],
+  "headers": [
+    {
+      "source": "/beacon/_astro/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/beacon/beacon.wasm",
+      "headers": [{ "key": "Content-Type", "value": "application/wasm" }]
+    }
+  ]
+}

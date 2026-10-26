@@ -1,0 +1,63 @@
+---
+import Playground from '../components/Playground.astro';
+import Footer from '../components/landing/Footer.astro';
+import Nav from '../components/landing/Nav.astro';
+import Landing from '../layouts/Landing.astro';
+import { url } from '../site';
+---
+
+<Landing title="Playground — beacon" description="Run beacon's Rust core in your browser via WebAssembly.">
+  <Nav />
+  <main class="pg-page">
+    <div class="container">
+      <div class="head">
+        <span class="eyebrow">Playground</span>
+        <h1>beacon, <span class="serif">live.</span></h1>
+        <p>
+          Every block below runs beacon's real Rust core, compiled to WebAssembly. Same code, same results as the Python
+          package. Nothing leaves your browser.{' '}
+          <a href={url('/getting-started/quickstart/')}>Install it →</a>
+        </p>
+      </div>
+      <Playground />
+    </div>
+  </main>
+  <Footer />
+</Landing>
+
+<style>
+  .pg-page {
+    padding: 56px 0 100px;
+  }
+  .head {
+    margin-bottom: 28px;
+    max-width: 760px;
+  }
+  h1 {
+    margin: 0.8rem 0 0.6rem;
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    letter-spacing: -0.045em;
+    line-height: 1;
+    font-weight: 650;
+  }
+  h1 .serif {
+    color: var(--amber);
+  }
+  p {
+    color: var(--text-2);
+    font-size: 1.05rem;
+    margin: 0;
+  }
+  p a {
+    color: var(--amber);
+    text-decoration: none;
+    font-weight: 560;
+  }
+  .pg-page :global(.pg) {
+    --sl-color-gray-6: var(--panel);
+    --sl-color-hairline-light: var(--line-2);
+    --sl-color-white: var(--text);
+    --sl-color-gray-3: var(--muted);
+    --sl-color-accent: var(--amber);
+  }
+</style>

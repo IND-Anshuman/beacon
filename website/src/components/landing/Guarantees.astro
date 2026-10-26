@@ -1,0 +1,106 @@
+---
+import { url } from '../../site';
+
+const items = [
+  {
+    n: '01',
+    title: 'Pure functions',
+    body: 'No hidden state, no caches, no clock, no environment variables, no randomness. The first call returns exactly what the thousandth does.',
+  },
+  {
+    n: '02',
+    title: 'Stable on every machine',
+    body: 'Byte-identical output across Linux, macOS and Windows, Python 3.10–3.14, CPU architectures and locales. Positions count code points, never bytes.',
+  },
+  {
+    n: '03',
+    title: 'Errors are API',
+    body: 'Every error has a stable code and message. Patch releases never change output, so snapshot tests of error behaviour keep passing.',
+  },
+  {
+    n: '04',
+    title: 'Fails loudly',
+    body: 'No repair modes. No trailing-comma guessing, no type coercion, no ignored schema keywords. If it is wrong, you find out where.',
+  },
+];
+---
+
+<section class="section guarantees">
+  <div class="container">
+    <div class="section-head center" data-reveal>
+      <span class="eyebrow">The contract</span>
+      <h2>Four guarantees, <em>in writing.</em></h2>
+      <p>
+        "Deterministic" is easy to claim. beacon publishes the contract, and its test suite checks it against 111 golden
+        files on three operating systems.
+      </p>
+    </div>
+    <div class="grid" data-spotlight>
+      {
+        items.map((it, i) => (
+          <article class="card g" data-reveal style={`--d:${i * 80}ms`}>
+            <span class="n">{it.n}</span>
+            <h3>{it.title}</h3>
+            <p>{it.body}</p>
+          </article>
+        ))
+      }
+    </div>
+    <p class="more" data-reveal>
+      <a href={url('/guarantees/determinism/')}>Read the full determinism contract →</a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .guarantees {
+    background: linear-gradient(180deg, transparent, var(--bg-2) 30%, var(--bg-2) 70%, transparent);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+  @media (max-width: 1000px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .g {
+    padding: 26px 24px 28px;
+    overflow: hidden;
+  }
+  .n {
+    font: 500 0.8rem var(--mono);
+    color: var(--amber);
+  }
+  h3 {
+    margin: 2.2rem 0 0.6rem;
+    font-size: 1.22rem;
+    letter-spacing: -0.02em;
+    font-weight: 620;
+  }
+  p {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 0.95rem;
+  }
+  .more {
+    margin-top: 28px;
+    text-align: center;
+  }
+  .more a {
+    color: var(--amber);
+    text-decoration: none;
+    font-weight: 560;
+  }
+  .more a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style>

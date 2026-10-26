@@ -1,0 +1,108 @@
+---
+import '../styles/fonts.css';
+import '../styles/landing.css';
+import { SITE, url } from '../site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title = `${SITE.name} — ${SITE.tagline}`, description = SITE.description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#07080c" />
+    <script is:inline>
+      // Share the theme choice with the Starlight docs (same localStorage key).
+      (() => {
+        const root = document.documentElement;
+        root.classList.remove('no-js');
+        let stored = '';
+        try {
+          stored = localStorage.getItem('starlight-theme') || '';
+        } catch {}
+        const theme =
+          stored === 'light' || stored === 'dark'
+            ? stored
+            : matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark';
+        root.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+    <script>
+      // Reveal-on-scroll
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add('in');
+              io.unobserve(e.target);
+            }
+          }
+        },
+        { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+      );
+      const revealables = [...document.querySelectorAll('[data-reveal]')];
+      const inView = (el: Element) => el.getBoundingClientRect().top < innerHeight;
+      revealables.forEach((el) => (inView(el) ? el.classList.add('in') : io.observe(el)));
+      // Never leave content hidden if the observer can't fire (background tabs, printing, crawlers).
+      addEventListener('beforeprint', () => revealables.forEach((el) => el.classList.add('in')));
+
+      // Cursor spotlight on card grids
+      document.querySelectorAll<HTMLElement>('[data-spotlight]').forEach((grid) => {
+        grid.addEventListener('pointermove', (ev) => {
+          for (const card of grid.querySelectorAll<HTMLElement>('.card')) {
+            const r = card.getBoundingClientRect();
+            card.style.setProperty('--mx', `${ev.clientX - r.left}px`);
+            card.style.setProperty('--my', `${ev.clientY - r.top}px`);
+          }
+        });
+      });
+
+      // Copy-to-clipboard buttons
+      document.querySelectorAll<HTMLElement>('[data-copy]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(btn.dataset.copy ?? '');
+            btn.setAttribute('data-copied', '');
+            const label = btn.querySelector('.copy-label');
+            const prev = label?.textContent;
+            if (label) label.textContent = 'Copied';
+            setTimeout(() => {
+              btn.removeAttribute('data-copied');
+              if (label && prev) label.textContent = prev;
+            }, 1600);
+          } catch {}
+        });
+      });
+
+      // Theme toggle (shared with Starlight's selector via localStorage)
+      document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const root = document.documentElement;
+          const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+          root.dataset.theme = next;
+          try {
+            localStorage.setItem('starlight-theme', next);
+          } catch {}
+        });
+      });
+    </script>
+  </body>
+</html>

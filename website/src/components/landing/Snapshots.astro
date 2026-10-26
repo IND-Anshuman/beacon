@@ -1,0 +1,223 @@
+---
+import { Code } from 'astro:components';
+import { url } from '../../site';
+
+const test = `from beacon import extract_json
+from beacon.snapshots import assert_snapshot
+
+def test_cancel_intent():
+    raw = load_fixture("cancel.txt")     # a recorded model response
+    result = extract_json(raw, schema=INTENT)
+    assert_snapshot("intents/cancel", result, input=raw, schema=INTENT)`;
+
+const diff = [
+  { t: ' ', s: '# beacon snapshot v1' },
+  { t: ' ', s: 'name: intents/cancel' },
+  { t: ' ', s: 'input: |-' },
+  { t: ' ', s: '  Sure! ```json' },
+  { t: ' ', s: '  {"intent": "cancel", "confidence": 0.93}' },
+  { t: ' ', s: '  ```' },
+  { t: ' ', s: 'value:' },
+  { t: '-', s: '  intent: cancel' },
+  { t: '+', s: '  intent: cancellation' },
+  { t: ' ', s: '  confidence: 0.93' },
+  { t: ' ', s: 'schema_validation:' },
+  { t: '-', s: '  passed: true' },
+  { t: '-', s: '  errors: []' },
+  { t: '+', s: '  passed: false' },
+  { t: '+', s: '  errors:' },
+  { t: '+', s: '    - path: "/intent"' },
+  { t: '+', s: '      keyword: enum' },
+];
+
+// Built as one string: whitespace from template formatting must not leak into <pre>.
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const diffHtml = diff
+  .map((l, i) => {
+    const cls = l.t === '+' ? 'add' : l.t === '-' ? 'del' : '';
+    return `<span class="dl ${cls}" style="--i:${i}"><span class="sign">${l.t}</span>${escapeHtml(l.s)}</span>`;
+  })
+  .join('');
+---
+
+<section class="section snaps" id="snapshots">
+  <div class="container grid">
+    <div class="copy" data-reveal>
+      <span class="eyebrow">Snapshot testing</span>
+      <h2>Test LLM apps <em>like normal code.</em></h2>
+      <p>
+        Model output isn't deterministic. What your code does with a given output is. Record a response once and
+        snapshot your parsing, validation and routing. Every behaviour change then shows up as a readable diff in
+        review.
+      </p>
+      <ul class="points">
+        <li><b>First run writes</b>, later runs compare byte for byte.</li>
+        <li><b>CI fails</b> on missing or changed snapshots, on Linux, macOS and Windows.</li>
+        <li><b>Errors are snapshottable:</b> type, code, message, position.</li>
+        <li><b>One command</b> to accept intended changes: <code>python -m beacon.snapshots update</code></li>
+      </ul>
+      <a class="btn btn-ghost" href={url('/snapshots/overview/')}>Snapshot testing guide →</a>
+    </div>
+
+    <div class="stack" data-reveal style="--d: 120ms">
+      <div class="window">
+        <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>tests/test_intents.py</div>
+        <Code code={test} lang="python" theme="github-dark-default" />
+      </div>
+      <div class="window pr">
+        <div class="window-bar">
+          <span class="dots"><i></i><i></i><i></i></span>snapshots/intents/cancel.yaml
+          <span class="stat"><span class="add">+6</span> <span class="del">−3</span></span>
+        </div>
+        <pre class="diff" set:html={diffHtml} />
+        <div class="fail">
+          <span class="x">✕</span> SnapshotMismatchError: snapshot 'intents/cancel' does not match. Run{" "}
+          <code>python -m beacon.snapshots update</code> if the change is intended.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+  }
+  @media (max-width: 1000px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  h2 {
+    margin: 0.9rem 0;
+    font-size: clamp(2rem, 4.4vw, 3.2rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    font-weight: 640;
+  }
+  h2 em {
+    font-family: var(--serif);
+    font-weight: 400;
+  }
+  .copy > p {
+    color: var(--text-2);
+    font-size: 1.08rem;
+    margin: 0 0 1.4rem;
+  }
+  .points {
+    margin: 0 0 2rem;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.7rem;
+  }
+  .points li {
+    position: relative;
+    padding-left: 1.6rem;
+    color: var(--text-2);
+  }
+  .points li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 99px;
+    border: 2px solid var(--amber);
+  }
+  .points b {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .points code {
+    font: 0.82em var(--mono);
+    color: var(--amber);
+  }
+  .stack {
+    display: grid;
+    gap: 14px;
+  }
+  .stack .window:first-child {
+    margin-right: 12%;
+  }
+  .pr {
+    margin-left: 6%;
+  }
+  @media (max-width: 640px) {
+    .stack .window:first-child,
+    .pr {
+      margin: 0;
+    }
+  }
+  .stat {
+    margin-left: auto;
+    font-size: 0.74rem;
+  }
+  .stat .add {
+    color: #5ee0a8;
+  }
+  .stat .del {
+    color: #ff8a8a;
+  }
+  .diff {
+    margin: 0;
+    padding: 10px 0;
+    font: 0.79rem/1.65 var(--mono);
+    overflow-x: auto;
+  }
+  .diff :global(.dl) {
+    display: block;
+    padding: 0 18px 0 12px;
+    white-space: pre;
+    color: #aeb5c2;
+  }
+  .diff :global(.sign) {
+    display: inline-block;
+    width: 1.4em;
+    color: #5c6576;
+  }
+  .diff :global(.dl.add) {
+    background: rgba(94, 224, 168, 0.1);
+    color: #b7f5d8;
+  }
+  .diff :global(.dl.add .sign) {
+    color: #5ee0a8;
+  }
+  .diff :global(.dl.del) {
+    background: rgba(255, 122, 122, 0.1);
+    color: #ffc4c4;
+  }
+  .diff :global(.dl.del .sign) {
+    color: #ff8a8a;
+  }
+  :global(.in) .diff :global(.dl.add),
+  :global(.in) .diff :global(.dl.del) {
+    animation: flash 1.2s ease both;
+    animation-delay: calc(400ms + var(--i) * 45ms);
+  }
+  @keyframes flash {
+    from {
+      background: transparent;
+      color: #aeb5c2;
+    }
+  }
+  .fail {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    font: 0.76rem/1.55 var(--mono);
+    color: #ffb0b0;
+    background: rgba(255, 122, 122, 0.05);
+  }
+  .fail .x {
+    color: #ff7a7a;
+    font-weight: 700;
+    margin-right: 4px;
+  }
+  .fail code {
+    color: #ffd27a;
+  }
+</style>

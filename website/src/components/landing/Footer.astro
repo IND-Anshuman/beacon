@@ -1,0 +1,203 @@
+---
+import logo from '../../assets/logo.svg?raw';
+import { SITE, url } from '../../site';
+
+const cols = [
+  {
+    title: 'Learn',
+    links: [
+      ['Introduction', '/getting-started/introduction/'],
+      ['Quickstart', '/getting-started/quickstart/'],
+      ['Core concepts', '/getting-started/core-concepts/'],
+      ['Determinism contract', '/guarantees/determinism/'],
+    ],
+  },
+  {
+    title: 'Blocks',
+    links: [
+      ['extract_json', '/blocks/extract-json/'],
+      ['parse_tool_call', '/blocks/parse-tool-call/'],
+      ['validate_schema', '/blocks/validate-schema/'],
+      ['All blocks', '/blocks/template/'],
+    ],
+  },
+  {
+    title: 'Testing',
+    links: [
+      ['Snapshot testing', '/snapshots/overview/'],
+      ['pytest plugin', '/snapshots/pytest/'],
+      ['CI setup', '/snapshots/ci/'],
+      ['Playground', '/playground/'],
+    ],
+  },
+  {
+    title: 'Reference',
+    links: [
+      ['Python API', '/reference/api/'],
+      ['Error codes', '/reference/error-codes/'],
+      ['Integrations', '/integrations/overview/'],
+      ['Changelog', '/reference/changelog/'],
+    ],
+  },
+];
+---
+
+<section class="final">
+  <div class="beam" aria-hidden="true"></div>
+  <div class="container inner" data-reveal>
+    <h2>Make the model the<br /><span class="serif">only moving part.</span></h2>
+    <div class="cta">
+      <a class="btn btn-primary" href={url('/getting-started/quickstart/')}>Get started</a>
+      <button class="copy-pill" type="button" data-copy="pip install llm-beacon" aria-label="Copy install command">
+        <span><span class="dollar">$</span> pip install llm-beacon</span>
+        <span class="icon" aria-hidden="true"
+          ><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            ><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg
+          ></span
+        >
+        <span class="copy-label sr-only">Copy</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container fgrid">
+    <div class="brand-col">
+      <a class="brand" href={url('/')}><span class="mark" set:html={logo} /> beacon</a>
+      <p>{SITE.tagline}</p>
+      <p class="small">MIT licensed · Rust core via PyO3 · v{SITE.version}</p>
+      {SITE.repoUrl && <a class="small link" href={SITE.repoUrl}>GitHub →</a>}
+    </div>
+    {
+      cols.map((c) => (
+        <nav aria-label={c.title}>
+          <h3>{c.title}</h3>
+          <ul>
+            {c.links.map(([label, href]) => (
+              <li>
+                <a href={url(href)}>{label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+  </div>
+</footer>
+
+<style>
+  .final {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(90px, 12vw, 150px) 0;
+    text-align: center;
+    border-top: 1px solid var(--line);
+    isolation: isolate;
+  }
+  .final .beam {
+    position: absolute;
+    left: 50%;
+    bottom: -60%;
+    width: 1400px;
+    height: 1400px;
+    translate: -50% 0;
+    z-index: -1;
+    background: conic-gradient(from 160deg at 50% 50%, transparent 0deg, rgba(255, 181, 71, 0.18) 20deg, transparent 40deg 360deg);
+    animation: wobble 9s ease-in-out infinite alternate;
+    -webkit-mask-image: radial-gradient(closest-side, #000, transparent);
+    mask-image: radial-gradient(closest-side, #000, transparent);
+  }
+  @keyframes wobble {
+    from {
+      rotate: -22deg;
+    }
+    to {
+      rotate: 22deg;
+    }
+  }
+  .final h2 {
+    margin: 0 0 2rem;
+    font-size: clamp(2.3rem, 6vw, 4.4rem);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    font-weight: 650;
+  }
+  .final h2 .serif {
+    color: var(--amber);
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+  .footer {
+    padding: 56px 0 64px;
+    border-top: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+  .fgrid {
+    display: grid;
+    grid-template-columns: 1.6fr repeat(4, 1fr);
+    gap: 32px;
+  }
+  @media (max-width: 900px) {
+    .fgrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .brand-col {
+      grid-column: 1 / -1;
+    }
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 680;
+    font-size: 1.1rem;
+    letter-spacing: -0.03em;
+    text-decoration: none;
+  }
+  .mark :global(svg) {
+    width: 24px;
+    height: 24px;
+  }
+  .brand-col p {
+    margin: 0.8rem 0 0;
+    color: var(--text-2);
+    font-size: 0.92rem;
+    max-width: 22rem;
+  }
+  .small {
+    font-size: 0.82rem !important;
+    color: var(--muted) !important;
+  }
+  .link {
+    display: inline-block;
+    margin-top: 0.6rem;
+    text-decoration: none;
+  }
+  h3 {
+    margin: 0 0 0.9rem;
+    font: 600 0.74rem var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+  }
+  nav a {
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 0.92rem;
+  }
+  nav a:hover {
+    color: var(--amber);
+  }
+</style>

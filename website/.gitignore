@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.astro/
+wasm/target/
+# public/beacon.wasm is committed so Vercel (no Rust toolchain) can serve the playground

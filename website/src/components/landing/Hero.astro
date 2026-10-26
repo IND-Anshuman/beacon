@@ -1,0 +1,429 @@
+---
+import { url } from '../../site';
+
+// Real values: hash_content({"intent": "cancel", "confidence": 0.93}) in Python
+// and in the in-browser WebAssembly build are both this digest.
+const DIGEST = '1f1bc8aeb9db2e0b';
+---
+
+<section class="hero">
+  <div class="beam" aria-hidden="true"><div class="beam-rot"></div></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="glow" aria-hidden="true"></div>
+
+  <div class="container hero-grid">
+    <div class="copy">
+      <a class="announce" href={url('/reference/changelog/')} data-reveal>
+        <span class="tag">v0.1</span>
+        Rust core · Python 3.10–3.14 · MIT
+        <span aria-hidden="true">→</span>
+      </a>
+      <h1 data-reveal style="--d: 80ms">
+        Same input.<br />
+        Same output.<br />
+        <span class="serif lit">Every time.</span>
+      </h1>
+      <p class="lead" data-reveal style="--d: 160ms">
+        beacon is the deterministic layer between your Python code and your LLM. Templates, JSON extraction, tool-call
+        parsing, schema validation, redaction and retries as pure functions with strict contracts, plus snapshot tests
+        for the parts you control.
+      </p>
+      <div class="cta" data-reveal style="--d: 240ms">
+        <a class="btn btn-primary" href={url('/getting-started/quickstart/')}>
+          Get started
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"
+            ><path d="M5 12h14M13 6l6 6-6 6"></path></svg
+          >
+        </a>
+        <button class="copy-pill" type="button" data-copy="pip install llm-beacon" aria-label="Copy install command">
+          <span><span class="dollar">$</span> pip install llm-beacon</span>
+          <span class="icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              ><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg
+            >
+          </span>
+          <span class="copy-label sr-only">Copy</span>
+        </button>
+      </div>
+      <ul class="facts" data-reveal style="--d: 320ms">
+        <li><strong>8</strong> pure blocks</li>
+        <li><strong>1–10 µs</strong> per call</li>
+        <li><strong>0</strong> silent fixes</li>
+      </ul>
+    </div>
+
+    <div class="visual" data-reveal style="--d: 200ms">
+      <div class="window terminal" id="hero-term">
+        <div class="window-bar">
+          <span class="dots"><i></i><i></i><i></i></span>
+          python · beacon
+        </div>
+        <pre aria-label="Example beacon session"><code><span class="l" data-type
+  ><span class="p">&gt;&gt;&gt; </span><span class="kw">from</span> beacon <span class="kw">import</span> extract_json, hash_content</span>
+<span class="l" data-type><span class="p">&gt;&gt;&gt; </span>raw = llm(<span class="s">"Classify: I want to cancel"</span>)</span>
+<span class="l" data-type><span class="p">&gt;&gt;&gt; </span>raw</span>
+<span class="l out"><span class="s">'Sure! ```json\n&#123;"intent": "cancel", "confidence": 0.93&#125;\n``` Hope that helps.'</span></span>
+<span class="l" data-type><span class="p">&gt;&gt;&gt; </span>extract_json(raw, schema=INTENT)</span>
+<span class="l out">&#123;<span class="s">'intent'</span>: <span class="s">'cancel'</span>, <span class="s">'confidence'</span>: <span class="n">0.93</span>&#125;</span>
+<span class="l" data-type><span class="p">&gt;&gt;&gt; </span>hash_content(_)</span>
+<span class="l out"><span class="s">'{DIGEST}'</span><span class="cursor" aria-hidden="true"></span></span></code></pre>
+      </div>
+
+      <div class="ticker window" aria-live="off">
+        <div class="tick-row">
+          <span class="lbl">runs</span>
+          <span class="val" data-runs>0</span>
+        </div>
+        <div class="tick-row">
+          <span class="lbl">unique outputs</span>
+          <span class="val one">1</span>
+        </div>
+        <div class="tick-row hash">
+          <span class="lbl">digest</span>
+          <span class="val mono">{DIGEST}</span>
+        </div>
+        <div class="bars" aria-hidden="true">
+          {Array.from({ length: 28 }, (_, i) => <i style={`--i:${i}`} />)}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(56px, 9vw, 110px) 0 clamp(70px, 9vw, 120px);
+    isolation: isolate;
+  }
+
+  /* The beacon: a slow rotating light wedge from a lamp above the page. */
+  .beam {
+    position: absolute;
+    inset: -40% -20% auto -20%;
+    height: 160%;
+    z-index: -1;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 22%, #000 10%, transparent 70%);
+    mask-image: radial-gradient(ellipse 60% 55% at 50% 22%, #000 10%, transparent 70%);
+  }
+  .beam-rot {
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    width: 2200px;
+    height: 2200px;
+    translate: -50% -50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgba(255, 181, 71, 0.16) 8deg,
+      rgba(255, 196, 107, 0.34) 18deg,
+      rgba(255, 181, 71, 0.12) 28deg,
+      transparent 40deg 180deg,
+      rgba(255, 181, 71, 0.1) 188deg,
+      rgba(255, 196, 107, 0.2) 198deg,
+      transparent 212deg 360deg
+    );
+    animation: sweep 16s linear infinite;
+    filter: blur(6px);
+  }
+  :global([data-theme='light']) .beam-rot {
+    opacity: 0.55;
+  }
+  @keyframes sweep {
+    to {
+      rotate: 360deg;
+    }
+  }
+  .glow {
+    position: absolute;
+    left: 50%;
+    top: -260px;
+    width: 900px;
+    height: 520px;
+    translate: -50% 0;
+    z-index: -1;
+    background: radial-gradient(closest-side, var(--amber-glow), transparent);
+    pointer-events: none;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+  }
+  @media (max-width: 1000px) {
+    .hero-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .announce {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.32rem 0.85rem 0.32rem 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-2);
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    font-size: 0.84rem;
+    color: var(--text-2);
+    text-decoration: none;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.2s ease;
+  }
+  .announce:hover {
+    border-color: color-mix(in srgb, var(--amber) 55%, transparent);
+  }
+  .announce .tag {
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amber) 18%, transparent);
+    color: var(--amber);
+    font: 600 0.74rem var(--mono);
+  }
+
+  h1 {
+    margin: 1.4rem 0 1.3rem;
+    font-size: clamp(2.9rem, 7.2vw, 5.6rem);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+    font-weight: 660;
+  }
+  h1 .lit {
+    font-size: 1.08em;
+    letter-spacing: -0.02em;
+    background: linear-gradient(100deg, #ffe0a8 0%, var(--amber) 40%, #ff8a1a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-right: 0.08em;
+  }
+  :global([data-theme='light']) h1 .lit {
+    background: linear-gradient(100deg, #d97706, #b45309 60%, #9a3412);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .lead {
+    max-width: 36rem;
+    margin: 0 0 2rem;
+    font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+    color: var(--text-2);
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.6rem;
+    margin: 2.2rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .facts strong {
+    color: var(--text);
+    font-weight: 620;
+  }
+
+  /* ---- terminal ---- */
+  .visual {
+    position: relative;
+  }
+  .terminal pre {
+    min-height: 318px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .terminal .l {
+    display: inline;
+  }
+  .terminal .p {
+    color: #6b7383;
+  }
+  .terminal .kw {
+    color: #ff9e64;
+  }
+  .terminal .s {
+    color: #ffd27a;
+  }
+  .terminal .n {
+    color: #7dd3fc;
+  }
+  .terminal .out {
+    color: #c9ced8;
+  }
+  .js-typing .l {
+    visibility: hidden;
+  }
+  .js-typing .l.shown {
+    visibility: visible;
+  }
+  .cursor {
+    display: inline-block;
+    width: 0.55em;
+    height: 1.05em;
+    margin-left: 2px;
+    vertical-align: -0.18em;
+    background: var(--amber);
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .ticker {
+    position: absolute;
+    right: -18px;
+    bottom: -46px;
+    width: min(300px, 78%);
+    padding: 14px 16px 12px;
+    background: color-mix(in srgb, #0c0f16 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-color: rgba(255, 181, 71, 0.28);
+    box-shadow:
+      0 20px 60px -20px rgba(0, 0, 0, 0.8),
+      0 0 0 1px rgba(255, 181, 71, 0.08),
+      0 0 40px -10px rgba(255, 181, 71, 0.35);
+  }
+  @media (max-width: 1000px) {
+    .ticker {
+      position: relative;
+      right: auto;
+      bottom: auto;
+      width: 100%;
+      margin-top: 14px;
+    }
+  }
+  .tick-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 3px 0;
+    font-size: 0.82rem;
+  }
+  .tick-row .lbl {
+    color: #8a93a3;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .tick-row .val {
+    font: 600 1.02rem var(--mono);
+    color: #f3f4f7;
+    font-variant-numeric: tabular-nums;
+  }
+  .tick-row .one {
+    color: #5ee0a8;
+  }
+  .tick-row.hash .val {
+    font-size: 0.82rem;
+    color: #ffd27a;
+  }
+  .bars {
+    display: flex;
+    gap: 3px;
+    height: 22px;
+    margin-top: 8px;
+    align-items: flex-end;
+  }
+  .bars i {
+    flex: 1;
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #ffc56b, #ff9a1f);
+    opacity: 0.25;
+    animation: pulse 2.4s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.18;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+</style>
+
+<script>
+  const term = document.getElementById('hero-term');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function runTicker() {
+    const el = document.querySelector<HTMLElement>('[data-runs]');
+    if (!el) return;
+    const target = 10000;
+    if (reduced) {
+      el.textContent = target.toLocaleString('en-US');
+      return;
+    }
+    const start = performance.now();
+    const dur = 2600;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(eased * target).toLocaleString('en-US');
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  async function typeTerminal() {
+    if (!term || reduced) {
+      runTicker();
+      return;
+    }
+    const lines = [...term.querySelectorAll<HTMLElement>('.l')];
+    term.classList.add('js-typing');
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    await sleep(500);
+    for (const line of lines) {
+      if (line.hasAttribute('data-type')) {
+        // Type the part after the prompt character by character.
+        const prompt = line.querySelector('.p');
+        const nodes = [...line.childNodes].filter((n) => n !== prompt);
+        const html = nodes.map((n) => (n as HTMLElement).outerHTML ?? n.textContent).join('');
+        const holder = document.createElement('span');
+        holder.innerHTML = html;
+        const text = holder.textContent ?? '';
+        nodes.forEach((n) => n.remove());
+        const typed = document.createElement('span');
+        line.append(typed);
+        line.classList.add('shown');
+        for (let i = 1; i <= text.length; i++) {
+          typed.textContent = text.slice(0, i);
+          await sleep(text.length > 40 ? 14 : 24);
+        }
+        typed.replaceWith(...holder.childNodes);
+        await sleep(260);
+      } else {
+        line.classList.add('shown');
+        await sleep(380);
+      }
+    }
+    runTicker();
+  }
+
+  if (term) {
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        io.disconnect();
+        typeTerminal();
+      }
+    });
+    io.observe(term);
+  }
+</script>
