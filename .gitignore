@@ -1,0 +1,17 @@
+/target
+.venv/
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+.coverage
+
+# Docs site
+website/node_modules/
+website/dist/
+website/.astro/
+website/wasm/target/

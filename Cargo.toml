@@ -1,0 +1,45 @@
+[package]
+name = "beacon"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Deterministic, tested building blocks for AI pipelines"
+license = "MIT"
+repository = "https://github.com/IND-Anshuman/beacon"
+homepage = "https://ind-anshuman.github.io/beacon/"
+readme = "README.md"
+publish = false
+
+[lib]
+name = "_beacon_native"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["python"]
+# The PyO3 bindings. Disable (`--no-default-features`) to test the pure-Rust
+# core without a Python interpreter.
+python = ["dep:pyo3"]
+
+[dependencies]
+pyo3 = { version = "0.30", features = ["abi3-py310"], optional = true }
+# "pure": portable Rust implementation (SIMD via intrinsics), no C toolchain needed.
+blake3 = { version = "1.8", features = ["pure"] }
+regex = { version = "1.12", default-features = false, features = ["std", "perf", "unicode"] }
+aho-corasick = "1.1"
+unicode-normalization = "0.1.24"
+
+[dev-dependencies]
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "deny"

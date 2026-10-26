@@ -1,0 +1,6 @@
+# Snapshot files are compared byte-for-byte; never let git rewrite line endings.
+snapshots/** text eol=lf
+*.py text eol=lf
+*.rs text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf

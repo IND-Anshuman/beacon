@@ -1,0 +1,73 @@
+[build-system]
+requires = ["maturin>=1.9.4,<2"]
+build-backend = "maturin"
+
+[project]
+# PyPI distribution name ("beacon" is taken). The import name is still `beacon`.
+name = "llm-beacon"
+version = "0.1.0"
+description = "Deterministic, tested building blocks for AI pipelines: templates, JSON extraction, tool-call parsing, schema validation, redaction, retry classification and snapshot testing."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Anshuman Singh" }]
+keywords = ["llm", "determinism", "json", "json-schema", "snapshot-testing", "prompt", "tool-calling", "pyo3"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Rust",
+    "Framework :: Pytest",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+openai = ["openai>=1.40"]
+langchain = ["langchain-core>=0.3"]
+llamaindex = ["llama-index-core>=0.11"]
+pydantic-ai = ["pydantic-ai>=0.4"]
+dspy = ["dspy>=2.6"]
+test = ["pytest>=8", "pyyaml>=6"]
+
+[project.urls]
+Homepage = "https://www.anshumanbuilds.dev/beacon/"
+Documentation = "https://www.anshumanbuilds.dev/beacon/getting-started/introduction/"
+Repository = "https://github.com/IND-Anshuman/beacon"
+Issues = "https://github.com/IND-Anshuman/beacon/issues"
+Changelog = "https://github.com/IND-Anshuman/beacon/blob/main/CHANGELOG.md"
+
+[project.entry-points.pytest11]
+beacon = "beacon.pytest_plugin"
+
+
+[tool.maturin]
+python-source = "python"
+module-name = "beacon._beacon_native"
+features = ["python"]
+include = [{ path = "LICENSE", format = "sdist" }]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+beacon_snapshot_dir = "snapshots"
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["beacon", "conftest"]
