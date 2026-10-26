@@ -1,0 +1,6 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: hash/numbers
+input: "[1, -1, 1.5, -0.0, 1e+300, 1000000000000000000000000000000, inf, -inf]"
+value:
+  hash16: "7359b0c608955d15"
+  hash64: "7359b0c608955d15bd6968bc01462e03517537d8d57a7b738897bd97e42f6a58"

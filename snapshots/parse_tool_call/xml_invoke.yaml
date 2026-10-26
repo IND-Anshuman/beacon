@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_tool_call/xml_invoke
+input: |-
+  <function_calls>
+  <invoke name="get_weather">
+  <parameter name="city">Paris</parameter>
+  <parameter name="days">3</parameter>
+  </invoke>
+  </function_calls>
+value:
+  ok:
+    - name: get_weather
+      arguments:
+        city: Paris
+        days: 3
+      format: xml_invoke

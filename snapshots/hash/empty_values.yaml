@@ -1,0 +1,6 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: hash/empty_values
+input: "[None, '', [], {}, 0, 0.0, False]"
+value:
+  hash16: "5e807be0552d4540"
+  hash64: "5e807be0552d4540aabf32c24f405d0eda0b0ccd11ab68bf3ba4a1a4926b1dcf"

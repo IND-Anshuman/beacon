@@ -1,0 +1,7 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/zero_width_soup
+input:
+  text: "in\u200bvisible\ufeff \u2060chars"
+  options: {}
+value:
+  ok: invisible chars

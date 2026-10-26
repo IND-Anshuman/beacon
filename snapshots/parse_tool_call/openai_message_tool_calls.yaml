@@ -1,0 +1,12 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_tool_call/openai_message_tool_calls
+input: "{\"role\": \"assistant\", \"content\": null, \"tool_calls\": [{\"id\": \"1\", \"type\": \"function\", \"function\": {\"name\": \"a\", \"arguments\": \"{}\"}}, {\"id\": \"2\", \"type\": \"function\", \"function\": {\"name\": \"b\", \"arguments\": \"{\\\"x\\\": 1}\"}}]}"
+value:
+  ok:
+    - name: a
+      arguments: {}
+      format: json
+    - name: b
+      arguments:
+        x: 1
+      format: json

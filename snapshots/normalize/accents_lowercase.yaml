@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/accents_lowercase
+input:
+  text: "Crème Brûlée À LA CARTE"
+  options:
+    strip_accents: true
+    lowercase: true
+value:
+  ok: creme brulee a la carte

@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/paragraphs
+input:
+  text: "Para one.\n\n\nPara two.\r\n\r\nPara three."
+  options:
+    preserve_newlines: true
+value:
+  ok: |-
+    Para one.
+    Para two.
+    Para three.

@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_tool_call/hermes_truncated
+input: "<tool_call>{\"name\": \"get_weather\", \"arguments\": {\"city\": \"Par"
+value:
+  error:
+    type: MalformedOutputError
+    code: json.unterminated_string
+    message: "unterminated string (line 1, column 58)"
+    position: 57
+    line: 1
+    column: 58

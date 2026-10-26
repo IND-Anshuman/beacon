@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: hash/pinned_digests
+value:
+  "null": a74e0b1433b54b7a
+  "true": "0538661423236a5d"
+  int: ebb828ba72fdfd4d
+  float: c7901986dbfcd013
+  str: "03323cd4ce3e5d5e"
+  intent: f41e0685bbe3fb6d

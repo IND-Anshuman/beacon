@@ -1,0 +1,8 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/no_normalization_form
+input:
+  text: "ﬁ ½"
+  options:
+    form: null
+value:
+  ok: "ﬁ ½"

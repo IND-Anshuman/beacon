@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_tool_call/llama_json
+input: "<|python_tag|>{\"name\": \"get_weather\", \"parameters\": {\"city\": \"Paris\"}}<|eom_id|>"
+value:
+  ok:
+    - name: get_weather
+      arguments:
+        city: Paris
+      format: llama

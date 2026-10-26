@@ -1,0 +1,6 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: hash/unicode
+input: "{'日本語': 'テキスト', 'emoji': '🎉', 'rtl': 'שלום'}"
+value:
+  hash16: "58981188cba69612"
+  hash64: "58981188cba69612444465369ba13cb2ac5ab3ccec6a88517ddcb2a9036f3f9b"

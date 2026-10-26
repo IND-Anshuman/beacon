@@ -1,0 +1,7 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/emoji_sequences
+input:
+  text: "👍🏽 🏳️\u200d🌈 👨\u200d💻"
+  options: {}
+value:
+  ok: "👍🏽 🏳️\u200d🌈 👨\u200d💻"

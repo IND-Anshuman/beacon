@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_tool_call/mistral_v11
+input: "[TOOL_CALLS]get_weather[ARGS]{\"city\": \"Paris\"}"
+value:
+  ok:
+    - name: get_weather
+      arguments:
+        city: Paris
+      format: mistral

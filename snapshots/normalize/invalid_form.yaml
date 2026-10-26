@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/invalid_form
+input:
+  text: x
+  options:
+    form: NFZ
+value:
+  error:
+    type: ValueError
+    message: "form must be one of 'NFC', 'NFD', 'NFKC', 'NFKD' or None, got 'NFZ'"

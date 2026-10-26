@@ -1,0 +1,7 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/compatibility_chars
+input:
+  text: "①②③ ﬀ ㎏ Ⅻ ½"
+  options: {}
+value:
+  ok: "123 ff kg XII 1⁄2"

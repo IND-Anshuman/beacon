@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_tool_call/json_in_fence
+input: |-
+  I will call:
+  ```json
+  {"name": "get_weather", "arguments": {"city": "Paris"}}
+  ```
+value:
+  ok:
+    - name: get_weather
+      arguments:
+        city: Paris
+      format: json

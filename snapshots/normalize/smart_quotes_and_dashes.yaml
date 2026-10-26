@@ -1,0 +1,7 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/smart_quotes_and_dashes
+input:
+  text: "“Quoted” — dash – en ‘single’"
+  options: {}
+value:
+  ok: "“Quoted” — dash – en ‘single’"

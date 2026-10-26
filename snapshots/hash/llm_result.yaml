@@ -1,0 +1,6 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: hash/llm_result
+input: "{'intent': 'cancel', 'confidence': 0.9, 'entities': [{'type': 'plan', 'value': 'pro'}]}"
+value:
+  hash16: "833978e08e77c5a1"
+  hash64: "833978e08e77c5a121c235cce5c125b6e93e9e27e4471744cc00720b354456a0"

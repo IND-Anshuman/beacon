@@ -1,0 +1,7 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/llm_output_spacing
+input:
+  text: "  The answer is:\n\n\n   42.  \n"
+  options: {}
+value:
+  ok: "The answer is: 42."

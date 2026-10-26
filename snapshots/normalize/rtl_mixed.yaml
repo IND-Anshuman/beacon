@@ -1,0 +1,7 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: normalize/rtl_mixed
+input:
+  text: "Hello שלום مرحبا 123"
+  options: {}
+value:
+  ok: "Hello שלום مرحبا 123"

@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_tool_call/json_bad_arguments_string
+input: "{\"name\": \"f\", \"arguments\": \"{not json}\"}"
+value:
+  error:
+    type: MalformedOutputError
+    code: tool_call.invalid_arguments
+    message: "tool call arguments string is not valid JSON (expected a double-quoted object key, found 'n') (line 1, column 1)"
+    position: 0
+    line: 1
+    column: 1
