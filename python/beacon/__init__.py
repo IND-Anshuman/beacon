@@ -26,6 +26,7 @@ from ._api import (
     validate_schema,
 )
 from ._blocks import Block, Pipeline, PipelineResult, StepRecord
+from ._schema import schema_instructions
 from .errors import (
     BeaconError,
     ExtraVariableError,
@@ -56,6 +57,7 @@ __all__ = [
     "parse_tool_calls",
     "validate_schema",
     "schema_errors",
+    "schema_instructions",
     "normalize",
     "hash_content",
     "redact",

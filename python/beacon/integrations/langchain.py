@@ -27,6 +27,7 @@ from langchain_core.prompts import StringPromptTemplate  # noqa: E402
 from pydantic import model_validator  # noqa: E402
 
 from .._api import extract_json_detailed, hash_content, schema_errors, template, template_variables  # noqa: E402
+from .._schema import schema_instructions as _schema_instructions  # noqa: E402
 from ..errors import BeaconError, MalformedOutputError, SchemaValidationError  # noqa: E402
 from ._common import parse_structured, schema_for  # noqa: E402
 
@@ -70,11 +71,11 @@ class BeaconPromptTemplate(StringPromptTemplate):
 
 
 def format_instructions(schema: Mapping[str, Any]) -> str:
-    """Deterministic instructions asking the model for JSON matching ``schema``."""
-    import json
+    """Deterministic instructions asking the model for JSON matching ``schema``.
 
-    body = json.dumps(schema, indent=2, ensure_ascii=False)
-    return f"Respond with a single JSON value that conforms to this JSON Schema:\n```json\n{body}\n```"
+    Thin alias for :func:`beacon.schema_instructions`, kept for LangChain users.
+    """
+    return _schema_instructions(schema)
 
 
 class BeaconJsonOutputParser(BaseOutputParser[Any]):
