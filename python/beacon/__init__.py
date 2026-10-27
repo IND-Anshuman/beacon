@@ -26,7 +26,7 @@ from ._api import (
     validate_schema,
 )
 from ._blocks import Block, Pipeline, PipelineResult, StepRecord
-from ._schema import schema_instructions
+from ._schema import schema_from_model, schema_instructions, validate_model
 from .errors import (
     BeaconError,
     ExtraVariableError,
@@ -58,6 +58,8 @@ __all__ = [
     "validate_schema",
     "schema_errors",
     "schema_instructions",
+    "schema_from_model",
+    "validate_model",
     "normalize",
     "hash_content",
     "redact",
