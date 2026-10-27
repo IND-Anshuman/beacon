@@ -2,6 +2,7 @@
 lazily, so ``import beacon`` never pulls in LangChain, LlamaIndex, etc.
 
 * :mod:`beacon.integrations.openai_sdk` — no extra dependency (duck-typed)
+* :mod:`beacon.integrations.anthropic_sdk` — no extra dependency (duck-typed)
 * :mod:`beacon.integrations.langchain` — ``pip install "llm-beacon[langchain]"``
 * :mod:`beacon.integrations.llamaindex` — ``pip install "llm-beacon[llamaindex]"``
 * :mod:`beacon.integrations.pydantic_ai` — works without Pydantic AI; uses
