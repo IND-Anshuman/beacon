@@ -1,0 +1,22 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: validate_schema/unevaluated_properties
+input:
+  instance:
+    a: 1
+    b: 2
+    c: 3
+  schema:
+    type: object
+    properties:
+      a:
+        type: integer
+    allOf:
+      - properties:
+          b:
+            type: integer
+    unevaluatedProperties: false
+value:
+  ok:
+    - path: ""
+      keyword: unevaluatedProperties
+      message: "unevaluated property \"c\" is not allowed"

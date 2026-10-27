@@ -192,6 +192,39 @@ def test_dependent_required_and_property_names() -> None:
     ]
 
 
+def test_dependent_schemas() -> None:
+    schema = {
+        "type": "object",
+        "properties": {"name": {"type": "string"}},
+        "dependentSchemas": {"credit_card": {"required": ["billing_address"]}},
+    }
+    assert schema_errors({"name": "a"}, schema) == []
+    assert schema_errors({"name": "a", "credit_card": "x", "billing_address": "y"}, schema) == []
+    assert msgs({"name": "a", "credit_card": "x"}, schema) == [
+        ("", "required", 'missing required property "billing_address"')
+    ]
+
+
+def test_unevaluated_properties() -> None:
+    schema = {"type": "object", "properties": {"a": {"type": "integer"}}, "unevaluatedProperties": False}
+    assert schema_errors({"a": 1}, schema) == []
+    assert msgs({"a": 1, "b": 2}, schema) == [("", "unevaluatedProperties", 'unevaluated property "b" is not allowed')]
+    # Sees through in-place applicators: "b" is evaluated by the allOf branch, so
+    # only the genuinely unevaluated "c" is rejected.
+    through = {
+        "type": "object",
+        "properties": {"a": {"type": "integer"}},
+        "allOf": [{"properties": {"b": {"type": "integer"}}}],
+        "unevaluatedProperties": False,
+    }
+    assert schema_errors({"a": 1, "b": 2}, through) == []
+    assert [k for _, k, _ in msgs({"a": 1, "b": 2, "c": 3}, through)] == ["unevaluatedProperties"]
+    # As a schema, it validates each leftover property.
+    typed = {"type": "object", "properties": {"a": {"type": "integer"}}, "unevaluatedProperties": {"type": "string"}}
+    assert schema_errors({"a": 1, "b": "ok"}, typed) == []
+    assert msgs({"a": 1, "b": 2}, typed) == [("/b", "type", 'expected type "string", got "integer"')]
+
+
 def test_pattern_properties() -> None:
     schema = {"patternProperties": {"^x-": {"type": "string"}}, "additionalProperties": False}
     assert schema_errors({"x-a": "ok"}, schema) == []
@@ -226,7 +259,7 @@ def test_annotations_are_ignored() -> None:
         ({"required": "a"}, 'invalid value for "required"'),
         ({"anyOf": []}, 'invalid value for "anyOf"'),
         ({"multipleOf": 0}, 'invalid value for "multipleOf"'),
-        ({"unevaluatedProperties": False}, "unsupported schema keyword"),
+        ({"unevaluatedItems": False}, "unsupported schema keyword"),
         ({"$ref": "#"}, "validation depth limit"),
         ("not a schema", "must be an object or a boolean"),
     ],
@@ -302,6 +335,19 @@ CORPUS = {
     "optional_nested": ({"user": {"age": "x"}}, {"properties": {"user": {"anyOf": [{"$ref": "#/$defs/U"}, {"type": "null"}]}}, "$defs": {"U": {"properties": {"age": {"type": "integer"}}}}}),
     "one_of_ambiguous": (3, {"oneOf": [{"minimum": 0}, {"maximum": 10}]}),
     "unsupported_keyword": (1, {"nullable": True}),
+    "dependent_schemas": (
+        {"credit_card": "4111"},
+        {"type": "object", "dependentSchemas": {"credit_card": {"required": ["billing_address"]}}},
+    ),
+    "unevaluated_properties": (
+        {"a": 1, "b": 2, "c": 3},
+        {
+            "type": "object",
+            "properties": {"a": {"type": "integer"}},
+            "allOf": [{"properties": {"b": {"type": "integer"}}}],
+            "unevaluatedProperties": False,
+        },
+    ),
 }
 
 

@@ -11,11 +11,12 @@
 //! 2. **Validation** — strict, never coercing (`"42"` is not a number). All
 //!    errors are collected in a fixed order:
 //!    `$ref` → `type` (stops this node on failure) → `enum`/`const` →
-//!    string / number / array / object keywords → `allOf`, `anyOf`, `oneOf`,
-//!    `not`, `if`/`then`/`else`. Object members are visited in the instance's
-//!    key order; array items in index order.
+//!    string / number / array / object keywords → `dependentSchemas` →
+//!    `allOf`, `anyOf`, `oneOf`, `not`, `if`/`then`/`else`, and finally
+//!    `unevaluatedProperties`. Object members are visited in the instance's key
+//!    order; array items in index order.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 
 use regex::Regex;
@@ -58,7 +59,7 @@ const ANNOTATIONS: [&str; 17] = [
     "$vocabulary",
 ];
 
-const KEYWORDS: [&str; 37] = [
+const KEYWORDS: [&str; 39] = [
     "$ref",
     "$defs",
     "definitions",
@@ -83,12 +84,14 @@ const KEYWORDS: [&str; 37] = [
     "maxContains",
     "required",
     "dependentRequired",
+    "dependentSchemas",
     "minProperties",
     "maxProperties",
     "propertyNames",
     "properties",
     "patternProperties",
     "additionalProperties",
+    "unevaluatedProperties",
     "allOf",
     "anyOf",
     "oneOf",
@@ -253,7 +256,7 @@ impl<'s> Validator<'s> {
                     let r = value.as_str().ok_or_else(|| bad("a string"))?;
                     resolve_ref(self.root, r)?;
                 }
-                "$defs" | "definitions" | "properties" | "patternProperties" => {
+                "$defs" | "definitions" | "properties" | "patternProperties" | "dependentSchemas" => {
                     let Value::Object(members) = value else {
                         return Err(bad("an object"));
                     };
@@ -436,7 +439,8 @@ impl<'s> Validator<'s> {
             Value::Null | Value::Bool(_) => {}
         }
 
-        self.validate_combinators(inst, s, path, depth)
+        self.validate_combinators(inst, s, path, depth)?;
+        self.validate_unevaluated(inst, s, path, depth)
     }
 
     fn validate_string(&mut self, text: &str, s: &Value, path: &str) {
@@ -656,6 +660,15 @@ impl<'s> Validator<'s> {
     }
 
     fn validate_combinators(&mut self, inst: &Value, s: &'s Value, path: &str, depth: usize) -> Result<(), BlockError> {
+        if let Value::Object(entries) = inst {
+            if let Some(Value::Object(deps)) = s.get("dependentSchemas") {
+                for (name, sub) in deps {
+                    if entries.iter().any(|(e, _)| e == name) {
+                        self.validate(inst, sub, path, depth + 1)?;
+                    }
+                }
+            }
+        }
         if let Some(Value::Array(subs)) = s.get("allOf") {
             for sub in subs {
                 self.validate(inst, sub, path, depth + 1)?;
@@ -706,6 +719,114 @@ impl<'s> Validator<'s> {
                 if self.collect(inst, cond, path, depth + 1)?.is_empty() { s.get("then") } else { s.get("else") };
             if let Some(sub) = branch {
                 self.validate(inst, sub, path, depth + 1)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Applies `unevaluatedProperties` to the object's properties that no other
+    /// keyword — here or in any in-place applicator that validates — evaluated.
+    fn validate_unevaluated(&mut self, inst: &Value, s: &'s Value, path: &str, depth: usize) -> Result<(), BlockError> {
+        let (Value::Object(entries), Some(unevaluated)) = (inst, s.get("unevaluatedProperties")) else {
+            return Ok(());
+        };
+        let mut evaluated = HashSet::new();
+        self.evaluated_properties(inst, s, depth, false, &mut evaluated)?;
+        for (key, value) in entries {
+            if evaluated.contains(key) {
+                continue;
+            }
+            match unevaluated {
+                Value::Bool(false) => {
+                    self.error(path, "unevaluatedProperties", format!("unevaluated property {} is not allowed", quote(key)));
+                }
+                sub => self.validate(value, sub, &push_pointer(path, key), depth + 1)?,
+            }
+        }
+        Ok(())
+    }
+
+    /// Collects the names of the object instance's properties that `schema`
+    /// evaluates, following `$ref` and the in-place applicators. Per draft
+    /// 2020-12, a subschema contributes only when it validates the instance, so
+    /// `unevaluatedProperties` sees a property as evaluated exactly when some
+    /// applied subschema actually covered it.
+    fn evaluated_properties(
+        &mut self,
+        inst: &Value,
+        schema: &'s Value,
+        depth: usize,
+        // Whether `schema`'s own `unevaluatedProperties` counts: false for the
+        // node being resolved (it has not run yet), true for nested applicator
+        // subschemas (theirs applies to their leftover properties).
+        count_unevaluated: bool,
+        out: &mut HashSet<String>,
+    ) -> Result<(), BlockError> {
+        if depth > MAX_DEPTH {
+            return Err(schema_err(format!("validation depth limit ({MAX_DEPTH}) exceeded; check for a cyclic $ref")));
+        }
+        let (Value::Object(entries), Value::Object(_)) = (inst, schema) else {
+            return Ok(());
+        };
+        let s = schema;
+
+        if let Some(Value::Object(props)) = s.get("properties") {
+            for (key, _) in entries {
+                if props.iter().any(|(p, _)| p == key) {
+                    out.insert(key.clone());
+                }
+            }
+        }
+        if let Some(Value::Object(patterns)) = s.get("patternProperties") {
+            for (key, _) in entries {
+                if patterns.iter().any(|(p, _)| self.is_match(p, key)) {
+                    out.insert(key.clone());
+                }
+            }
+        }
+        // `additionalProperties` (and, for a nested schema, its own
+        // `unevaluatedProperties`) applies to and so evaluates every property
+        // not already matched above.
+        if s.get("additionalProperties").is_some() || (count_unevaluated && s.get("unevaluatedProperties").is_some()) {
+            for (key, _) in entries {
+                out.insert(key.clone());
+            }
+        }
+
+        if let Some(Value::Str(r)) = s.get("$ref") {
+            let target = resolve_ref(self.root, r)?;
+            if self.collect(inst, target, "", depth + 1)?.is_empty() {
+                self.evaluated_properties(inst, target, depth + 1, true, out)?;
+            }
+        }
+        for keyword in ["allOf", "anyOf", "oneOf"] {
+            if let Some(Value::Array(subs)) = s.get(keyword) {
+                for sub in subs {
+                    if self.collect(inst, sub, "", depth + 1)?.is_empty() {
+                        self.evaluated_properties(inst, sub, depth + 1, true, out)?;
+                    }
+                }
+            }
+        }
+        if let Some(cond) = s.get("if") {
+            if self.collect(inst, cond, "", depth + 1)?.is_empty() {
+                self.evaluated_properties(inst, cond, depth + 1, true, out)?;
+                if let Some(then) = s.get("then") {
+                    if self.collect(inst, then, "", depth + 1)?.is_empty() {
+                        self.evaluated_properties(inst, then, depth + 1, true, out)?;
+                    }
+                }
+            } else if let Some(els) = s.get("else") {
+                if self.collect(inst, els, "", depth + 1)?.is_empty() {
+                    self.evaluated_properties(inst, els, depth + 1, true, out)?;
+                }
+            }
+        }
+        if let Some(Value::Object(deps)) = s.get("dependentSchemas") {
+            for (name, sub) in deps {
+                if entries.iter().any(|(e, _)| e == name) && self.collect(inst, sub, "", depth + 1)?.is_empty() {
+                    self.evaluated_properties(inst, sub, depth + 1, true, out)?;
+                }
             }
         }
         Ok(())
@@ -887,6 +1008,58 @@ mod tests {
     fn cyclic_ref_is_an_error_not_a_crash() {
         let s = parse_document(r##"{"$ref": "#"}"##).unwrap();
         assert_eq!(validate(&Value::Null, &s).unwrap_err().kind, ErrorKind::Schema);
+    }
+
+    #[test]
+    fn dependent_schemas() {
+        let schema = r#"{
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "dependentSchemas": {"credit_card": {"required": ["billing_address"]}}
+        }"#;
+        assert!(errs(r#"{"name": "a"}"#, schema).is_empty());
+        assert!(errs(r#"{"name": "a", "credit_card": "x", "billing_address": "y"}"#, schema).is_empty());
+        let e = errs(r#"{"name": "a", "credit_card": "x"}"#, schema);
+        assert_eq!(
+            e,
+            vec![("".to_string(), "required", r#"missing required property "billing_address""#.to_string())]
+        );
+    }
+
+    #[test]
+    fn unevaluated_properties_false() {
+        let schema = r#"{"type": "object", "properties": {"a": {"type": "integer"}}, "unevaluatedProperties": false}"#;
+        assert!(errs(r#"{"a": 1}"#, schema).is_empty());
+        let e = errs(r#"{"a": 1, "b": 2}"#, schema);
+        assert_eq!(
+            e,
+            vec![("".to_string(), "unevaluatedProperties", r#"unevaluated property "b" is not allowed"#.to_string())]
+        );
+    }
+
+    #[test]
+    fn unevaluated_properties_sees_through_applicators() {
+        // "b" is evaluated by the allOf branch, so it must be allowed; only the
+        // genuinely unevaluated "c" is rejected.
+        let schema = r#"{
+            "type": "object",
+            "properties": {"a": {"type": "integer"}},
+            "allOf": [{"properties": {"b": {"type": "integer"}}}],
+            "unevaluatedProperties": false
+        }"#;
+        assert!(errs(r#"{"a": 1, "b": 2}"#, schema).is_empty());
+        let e = errs(r#"{"a": 1, "b": 2, "c": 3}"#, schema);
+        assert_eq!(e.len(), 1, "{e:?}");
+        assert_eq!(e[0].1, "unevaluatedProperties");
+        assert_eq!(e[0].2, r#"unevaluated property "c" is not allowed"#);
+    }
+
+    #[test]
+    fn unevaluated_properties_as_schema() {
+        let schema = r#"{"type": "object", "properties": {"a": {"type": "integer"}}, "unevaluatedProperties": {"type": "string"}}"#;
+        assert!(errs(r#"{"a": 1, "b": "ok"}"#, schema).is_empty());
+        let e = errs(r#"{"a": 1, "b": 2}"#, schema);
+        assert_eq!(e, vec![("/b".to_string(), "type", r#"expected type "string", got "integer""#.to_string())]);
     }
 
     #[test]

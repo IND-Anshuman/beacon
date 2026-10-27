@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: validate_schema/dependent_schemas
+input:
+  instance:
+    credit_card: "4111"
+  schema:
+    type: object
+    dependentSchemas:
+      credit_card:
+        required:
+          - billing_address
+value:
+  ok:
+    - path: ""
+      keyword: required
+      message: "missing required property \"billing_address\""
