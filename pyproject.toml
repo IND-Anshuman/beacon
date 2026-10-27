@@ -48,6 +48,9 @@ Repository = "https://github.com/IND-Anshuman/beacon"
 Issues = "https://github.com/IND-Anshuman/beacon/issues"
 Changelog = "https://github.com/IND-Anshuman/beacon/blob/main/CHANGELOG.md"
 
+[project.scripts]
+beacon = "beacon.cli:main"
+
 [project.entry-points.pytest11]
 beacon = "beacon.pytest_plugin"
 
