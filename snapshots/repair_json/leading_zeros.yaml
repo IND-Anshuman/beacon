@@ -1,0 +1,18 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/leading_zeros
+input:
+  text: "[007, -042, 0, 0.5]"
+value:
+  value:
+    - 7
+    - -42
+    - 0
+    - 0.5
+  incomplete: false
+  repairs:
+    - kind: leading_zeros
+      at: 1
+      detail: "stripped leading zeros from '007'"
+    - kind: leading_zeros
+      at: 6
+      detail: "stripped leading zeros from '042'"

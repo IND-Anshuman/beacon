@@ -6,6 +6,7 @@ import { defineConfig } from 'astro/config';
 // BASE_PATH=/beacon (the deploy workflow does this automatically).
 const site = process.env.SITE_URL ?? 'http://localhost:4321';
 const base = process.env.BASE_PATH ?? '/';
+const ogImage = new URL(`${base.replace(/\/$/, '')}/og.png`, site).href;
 const repoUrl = process.env.PUBLIC_REPO_URL || 'https://github.com/IND-Anshuman/beacon';
 
 export default defineConfig({
@@ -18,6 +19,11 @@ export default defineConfig({
       description: 'Deterministic, tested building blocks for AI pipelines.',
       logo: { src: './src/assets/logo.svg', replacesTitle: false },
       favicon: '/favicon.svg',
+      head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: ogImage } },
+        { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: ogImage } },
+      ],
       social: [{ icon: 'github', label: 'GitHub', href: repoUrl }],
       editLink: { baseUrl: `${repoUrl}/edit/main/website/` },
       lastUpdated: false,

@@ -1,0 +1,15 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/single_quotes
+input:
+  text: "{'intent': 'cancel'}"
+value:
+  value:
+    intent: cancel
+  incomplete: false
+  repairs:
+    - kind: single_quotes
+      at: 1
+      detail: converted single-quoted string to double quotes
+    - kind: single_quotes
+      at: 11
+      detail: converted single-quoted string to double quotes

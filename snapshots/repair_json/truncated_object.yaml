@@ -1,0 +1,14 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/truncated_object
+input:
+  text: "{\"a\": 1, \"b\": {\"c\": 2"
+value:
+  value:
+    a: 1
+    b:
+      c: 2
+  incomplete: true
+  repairs:
+    - kind: truncated
+      at: 21
+      detail: "input ended before the JSON value was complete; closed 2 unterminated containers: } }"

@@ -1,0 +1,12 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/truncated_dangling_key
+input:
+  text: "{\"a\": 1, \"b\":"
+value:
+  value:
+    a: 1
+  incomplete: true
+  repairs:
+    - kind: truncated
+      at: 13
+      detail: "input ended before the JSON value was complete; closed 1 unterminated container: }"

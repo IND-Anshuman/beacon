@@ -1,0 +1,15 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/duplicate_keys
+input:
+  text: "{\"a\": 1, \"a\": 2, \"a\": 3}"
+value:
+  value:
+    a: 3
+  incomplete: false
+  repairs:
+    - kind: duplicate_keys
+      at: 9
+      detail: "kept the last value for duplicate key \"a\""
+    - kind: duplicate_keys
+      at: 17
+      detail: "kept the last value for duplicate key \"a\""

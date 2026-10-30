@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from . import __version__
-from ._api import extract_json, hash_content, parse_tool_calls, redact, schema_errors
+from ._api import extract_json, hash_content, parse_tool_calls, redact, repair_json, schema_errors
 from .errors import BeaconError
 
 EXIT_OK = 0
@@ -48,6 +48,18 @@ def _cmd_extract(args: argparse.Namespace) -> int:
     text = _read_text(args.input, inline=args.text)
     value = extract_json(text, select=args.select, kind=args.kind)
     _dump(value, args.indent)
+    return EXIT_OK
+
+
+def _cmd_repair(args: argparse.Namespace) -> int:
+    text = _read_text(args.input, inline=args.text)
+    result = repair_json(text)
+    _dump(result.value, args.indent)
+    for r in result.repairs:
+        print(f"repair: {r.kind} at {r.at}: {r.detail}", file=sys.stderr)
+    if args.strict and result.incomplete:
+        print("beacon: repaired JSON is incomplete (truncated input)", file=sys.stderr)
+        return EXIT_ERROR
     return EXIT_OK
 
 
@@ -96,6 +108,12 @@ def _build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--kind", choices=["auto", "any", "object", "array"], default="auto")
     extract.add_argument("--indent", type=int, default=None, help="pretty-print with this indent")
     extract.set_defaults(func=_cmd_extract)
+
+    repair = sub.add_parser("repair", help="repair malformed JSON, reporting every change on stderr")
+    add_input(repair)
+    repair.add_argument("--indent", type=int, default=None, help="pretty-print with this indent")
+    repair.add_argument("--strict", action="store_true", help="exit 1 if the result is incomplete (truncated)")
+    repair.set_defaults(func=_cmd_repair)
 
     validate = sub.add_parser("validate", help="validate a JSON file against a JSON Schema file")
     validate.add_argument("schema", help="JSON Schema file")

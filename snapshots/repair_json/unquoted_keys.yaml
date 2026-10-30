@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/unquoted_keys
+input:
+  text: "{intent: 1, score: 2}"
+value:
+  value:
+    intent: 1
+    score: 2
+  incomplete: false
+  repairs:
+    - kind: unquoted_keys
+      at: 1
+      detail: "quoted unquoted key 'intent'"
+    - kind: unquoted_keys
+      at: 12
+      detail: "quoted unquoted key 'score'"

@@ -1,0 +1,19 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/comments
+input:
+  text: |-
+    {
+      // intent
+      "a": 1 /* inline */
+    }
+value:
+  value:
+    a: 1
+  incomplete: false
+  repairs:
+    - kind: comment
+      at: 4
+      detail: removed // line comment
+    - kind: comment
+      at: 23
+      detail: "removed /* */ block comment"

@@ -42,6 +42,24 @@ def test_validate_ok_and_fail(tmp_path: Path, capsys: pytest.CaptureFixture[str]
     assert "/n: type:" in err
 
 
+def test_repair_prints_value_and_logs_repairs(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["repair", "-t", '{"a": 1, "b": 2,}']) == 0
+    out = capsys.readouterr()
+    assert json.loads(out.out) == {"a": 1, "b": 2}
+    assert "repair: trailing_comma" in out.err
+
+
+def test_repair_strict_exits_1_on_truncation(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["repair", "-t", '{"a": [1, 2']) == 0  # tolerant by default
+    assert main(["repair", "-t", '{"a": [1, 2', "--strict"]) == 1
+    assert "incomplete" in capsys.readouterr().err
+
+
+def test_repair_no_json_exits_1(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["repair", "-t", "just prose"]) == 1
+    assert "beacon:" in capsys.readouterr().err
+
+
 def test_redact(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["redact", "-t", "Email me at alice@example.com"]) == 0
     assert capsys.readouterr().out == "Email me at [REDACTED:email]"

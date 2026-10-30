@@ -1,0 +1,16 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/control_chars
+input:
+  text: |-
+    {"a": "line1
+    line2"}
+value:
+  value:
+    a: |-
+      line1
+      line2
+  incomplete: false
+  repairs:
+    - kind: control_chars
+      at: 12
+      detail: "escaped literal control character U+000A in string"

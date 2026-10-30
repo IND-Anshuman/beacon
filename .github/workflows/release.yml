@@ -1,11 +1,13 @@
 name: Release
 
 # Builds abi3 wheels (one per platform covers Python 3.10+) and an sdist, then
-# publishes to PyPI with trusted publishing when a v* tag is pushed.
+# publishes to PyPI with trusted publishing. No local git tag is needed:
+#   * publish a GitHub Release (the UI creates the tag for you), or
+#   * run this workflow manually from the Actions tab (Run workflow).
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -57,7 +59,7 @@ jobs:
     name: Publish to PyPI
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     environment: pypi
     permissions:
       id-token: write

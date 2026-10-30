@@ -14,7 +14,7 @@ requires-python = ">=3.10"
 authors = [{ name = "Anshuman Singh" }]
 keywords = ["llm", "determinism", "json", "json-schema", "snapshot-testing", "prompt", "tool-calling", "pyo3"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -26,6 +26,7 @@ classifiers = [
     "Programming Language :: Rust",
     "Framework :: Pytest",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Testing",
     "Typing :: Typed",
 ]

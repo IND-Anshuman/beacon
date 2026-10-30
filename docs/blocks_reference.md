@@ -98,6 +98,52 @@ JSON still raises. `schema=` validates the result with `validate_schema`.
 `source` (`"whole"`, `"fence"`, `"inline"`), `candidates` (count after the
 kind filter).
 
+## repair_json
+
+```python
+repair_json(text, *, schema=None) -> RepairResult
+```
+
+The opt-in, tolerant counterpart to `extract_json`. It accepts the near-JSON
+models actually emit and returns the value **plus a complete, ordered log of
+every change**. Nothing is repaired silently. `extract_json` stays strict; this
+is a separate block you reach for deliberately.
+
+It is **document-oriented**: it repairs the JSON value at the start of the text
+(after stripping a BOM and leading comments/whitespace) and ignores trailing
+content. For JSON embedded in prose, call `extract_json` first. If there is no
+JSON value to repair, it raises `NoJSONFoundError` (`json.not_found`).
+
+**Repairs recorded** (each a `Repair(kind, at, detail)`, `at` a code-point
+offset):
+
+| kind | what it fixes |
+| --- | --- |
+| `trailing_comma` | `,` before `}` or `]` |
+| `single_quotes` | `'...'` strings |
+| `smart_quotes` | `“ ” ‘ ’` used as quotes |
+| `unquoted_keys` | bare identifier keys |
+| `python_literals` | `True` / `False` / `None` → `true` / `false` / `null` |
+| `comment` | `//` line and `/* */` block comments |
+| `nan_infinity` | `NaN` / `Infinity` / `-Infinity` → `null` |
+| `control_chars` | literal control characters inside strings |
+| `bom` | a leading UTF-8 byte-order mark |
+| `duplicate_keys` | duplicate object keys (last value wins) |
+| `leading_zeros` | `007` → `7` |
+| `truncated` | input cut off early: open containers and strings are closed |
+
+Big integers need no repair — they are preserved exactly (as `int`), the same
+as `extract_json`.
+
+**Truncation** (a response cut off at a token limit) is first-class: open
+containers are closed, a dangling key with no value is dropped, `incomplete` is
+set to `True`, and the final `truncated` repair names the brackets it closed
+(e.g. `closed 2 unterminated containers: ] }`).
+
+`RepairResult` fields: `value`, `repairs` (tuple, in order), `repaired`
+(`== bool(repairs)`), `incomplete`. `schema=` validates the repaired value with
+`validate_schema`.
+
 ## parse_tool_call
 
 ```python

@@ -10,6 +10,8 @@ from . import _beacon_native, retry
 from ._api import (
     Extraction,
     PIIFinding,
+    Repair,
+    RepairResult,
     SchemaViolation,
     ToolCall,
     detect_pii,
@@ -20,6 +22,7 @@ from ._api import (
     parse_tool_call,
     parse_tool_calls,
     redact,
+    repair_json,
     schema_errors,
     template,
     template_variables,
@@ -53,6 +56,7 @@ __all__ = [
     "template_variables",
     "extract_json",
     "extract_json_detailed",
+    "repair_json",
     "parse_tool_call",
     "parse_tool_calls",
     "validate_schema",
@@ -67,6 +71,8 @@ __all__ = [
     "retry",
     # result types
     "Extraction",
+    "RepairResult",
+    "Repair",
     "ToolCall",
     "SchemaViolation",
     "PIIFinding",

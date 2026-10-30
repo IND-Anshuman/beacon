@@ -1,5 +1,11 @@
 # beacon
 
+[![PyPI version](https://img.shields.io/pypi/v/llm-beacon.svg)](https://pypi.org/project/llm-beacon/)
+[![Downloads](https://img.shields.io/pypi/dm/llm-beacon.svg)](https://pypistats.org/packages/llm-beacon)
+[![Python versions](https://img.shields.io/pypi/pyversions/llm-beacon.svg)](https://pypi.org/project/llm-beacon/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/core-Rust-orange.svg)](https://www.rust-lang.org/)
+
 > Deterministic, tested building blocks for AI pipelines.
 
 Every block in beacon is a pure function with the same contract:
@@ -7,7 +13,7 @@ Every block in beacon is a pure function with the same contract:
 
 Stop debugging why your pipeline gave a different result yesterday.
 
-**[Documentation](https://ind-anshuman.github.io/beacon/)** · **[Playground](https://ind-anshuman.github.io/beacon/playground/)** · **[PyPI](https://pypi.org/project/llm-beacon/)** · **[GitHub](https://github.com/IND-Anshuman/beacon)**
+**[Documentation](https://www.anshumanbuilds.dev/beacon/)** · **[Playground](https://www.anshumanbuilds.dev/beacon/playground/)** · **[PyPI](https://pypi.org/project/llm-beacon/)** · **[GitHub](https://github.com/IND-Anshuman/beacon)**
 
 beacon is the layer between your Python code and your LLM: prompt templating,
 JSON extraction, tool-call parsing, schema validation, text normalization,

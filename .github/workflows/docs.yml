@@ -1,23 +1,19 @@
 name: Docs site
 
 # Builds the documentation site (Astro + Starlight) and the playground's
-# WebAssembly engine, and deploys to GitHub Pages.
-# One-time setup: Settings → Pages → Source: "GitHub Actions".
+# WebAssembly engine to catch breakage. Deploys are handled by Vercel's own Git
+# integration (the site is served at https://www.anshumanbuilds.dev/beacon/).
 
 on:
   push:
     branches: [main]
-    paths: ["website/**", "src/**", "Cargo.toml", "Cargo.lock", ".github/workflows/docs.yml"]
+    paths: ["website/**", "src/**", "python/**", "Cargo.toml", "Cargo.lock", ".github/workflows/docs.yml"]
   pull_request:
-    paths: ["website/**", "src/**"]
+    paths: ["website/**", "src/**", "python/**", "Cargo.toml", "Cargo.lock"]
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -35,35 +31,16 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: website/package-lock.json
-      - id: pages
-        uses: actions/configure-pages@v5
-      - name: Install
+      - run: npm ci
         working-directory: website
-        run: npm ci
-      - name: Build playground engine (Rust → WebAssembly)
+      - run: npm run wasm
         working-directory: website
-        run: npm run wasm
-      - name: Build site
+      - run: npm run build && node scripts/nest-dist.mjs
         working-directory: website
         env:
-          SITE_URL: ${{ steps.pages.outputs.origin }}
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          PUBLIC_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
-        run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+          SITE_URL: https://www.anshumanbuilds.dev
+          BASE_PATH: /beacon
+      - uses: actions/upload-artifact@v4
         with:
+          name: beacon-docs-dist
           path: website/dist
-
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4

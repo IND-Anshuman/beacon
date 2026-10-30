@@ -1,0 +1,28 @@
+# beacon
+
+> Deterministic, tested building blocks for AI pipelines. Rust core, Python API.
+
+beacon is the deterministic layer between Python code and an LLM: prompt templating,
+JSON extraction, tool-call parsing, schema validation, text normalization, content
+hashing, PII redaction, retry classification, and snapshot testing. Every block is a
+pure function with the same contract: same input, same output, every time.
+
+Install: pip install llm-beacon  (import name: beacon)
+Docs: https://www.anshumanbuilds.dev/beacon/
+PyPI: https://pypi.org/project/llm-beacon/
+Source: https://github.com/IND-Anshuman/beacon
+
+## Optional integrations
+pip install "llm-beacon[langchain]" | [llamaindex] | [pydantic-ai] | [dspy] | [openai]
+
+## Key pages
+- Quickstart: https://www.anshumanbuilds.dev/beacon/getting-started/quickstart/
+- Core concepts: https://www.anshumanbuilds.dev/beacon/getting-started/core-concepts/
+- JSON extraction: https://www.anshumanbuilds.dev/beacon/blocks/extract-json/
+- Tool-call parsing: https://www.anshumanbuilds.dev/beacon/blocks/parse-tool-call/
+- Schema validation: https://www.anshumanbuilds.dev/beacon/blocks/validate-schema/
+- PII redaction: https://www.anshumanbuilds.dev/beacon/blocks/redact/
+- Retry classification: https://www.anshumanbuilds.dev/beacon/blocks/retry/
+- Snapshot testing: https://www.anshumanbuilds.dev/beacon/snapshots/overview/
+- Integrations: https://www.anshumanbuilds.dev/beacon/integrations/overview/
+- API reference: https://www.anshumanbuilds.dev/beacon/reference/api/

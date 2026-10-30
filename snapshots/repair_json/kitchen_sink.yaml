@@ -1,0 +1,41 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/kitchen_sink
+input:
+  text: "{a: 'x', b: [1, 2,], c: None, d: NaN,}"
+value:
+  value:
+    a: x
+    b:
+      - 1
+      - 2
+    c: null
+    d: null
+  incomplete: false
+  repairs:
+    - kind: unquoted_keys
+      at: 1
+      detail: "quoted unquoted key 'a'"
+    - kind: single_quotes
+      at: 4
+      detail: converted single-quoted string to double quotes
+    - kind: unquoted_keys
+      at: 9
+      detail: "quoted unquoted key 'b'"
+    - kind: trailing_comma
+      at: 17
+      detail: "removed ',' before ']'"
+    - kind: unquoted_keys
+      at: 21
+      detail: "quoted unquoted key 'c'"
+    - kind: python_literals
+      at: 24
+      detail: replaced Python literal None with null
+    - kind: unquoted_keys
+      at: 30
+      detail: "quoted unquoted key 'd'"
+    - kind: nan_infinity
+      at: 33
+      detail: replaced NaN with null
+    - kind: trailing_comma
+      at: 36
+      detail: "removed ',' before '}'"

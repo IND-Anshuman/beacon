@@ -1,0 +1,20 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/python_literals
+input:
+  text: "{\"ok\": True, \"no\": False, \"v\": None}"
+value:
+  value:
+    ok: true
+    "no": false
+    v: null
+  incomplete: false
+  repairs:
+    - kind: python_literals
+      at: 7
+      detail: replaced Python literal True with true
+    - kind: python_literals
+      at: 19
+      detail: replaced Python literal False with false
+    - kind: python_literals
+      at: 31
+      detail: replaced Python literal None with null

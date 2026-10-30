@@ -1,0 +1,12 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/bom
+input:
+  text: "\ufeff{\"a\": 1}"
+value:
+  value:
+    a: 1
+  incomplete: false
+  repairs:
+    - kind: bom
+      at: 0
+      detail: removed UTF-8 byte-order mark

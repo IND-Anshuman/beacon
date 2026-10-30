@@ -1,0 +1,13 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/trailing_comma
+input:
+  text: "{\"a\": 1, \"b\": 2,}"
+value:
+  value:
+    a: 1
+    b: 2
+  incomplete: false
+  repairs:
+    - kind: trailing_comma
+      at: 15
+      detail: "removed ',' before '}'"

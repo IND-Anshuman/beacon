@@ -17,6 +17,9 @@ __all__ = [
     "extract_json",
     "extract_json_detailed",
     "Extraction",
+    "repair_json",
+    "RepairResult",
+    "Repair",
     "parse_tool_call",
     "parse_tool_calls",
     "ToolCall",
@@ -157,6 +160,77 @@ def extract_json_detailed(text: str, *, select: Select = "first", kind: Kind = "
     _require_str(text, "text")
     d = _native.extract_json_detailed(text, select, kind)
     return Extraction(d["value"], d["start"], d["end"], d["source"], d["candidates"])
+
+
+# ---------------------------------------------------------------- repair
+
+
+@dataclass(frozen=True)
+class Repair:
+    """One change :func:`repair_json` made.
+
+    ``at`` is the code-point offset in the input where the change applied.
+    """
+
+    kind: str
+    at: int
+    detail: str
+
+
+@dataclass(frozen=True)
+class RepairResult:
+    """Result of :func:`repair_json`.
+
+    ``repairs`` lists every change, in order; ``repaired`` is ``True`` when any
+    were made; ``incomplete`` is ``True`` when the input ended before the JSON
+    was complete (truncated output) and the repairer closed it.
+    """
+
+    value: Any
+    repairs: tuple[Repair, ...]
+    incomplete: bool
+
+    @property
+    def repaired(self) -> bool:
+        return bool(self.repairs)
+
+
+def repair_json(text: str, *, schema: Optional[Mapping[str, Any]] = None) -> RepairResult:
+    """Repair near-JSON that a model emitted, recording every change.
+
+    Unlike :func:`extract_json` (strict, never repairs), this accepts trailing
+    commas, single-quoted strings, unquoted keys, Python ``True``/``False``/
+    ``None``, comments, ``NaN``/``Infinity`` (→ ``null``), smart quotes, literal
+    control characters, a leading BOM, leading zeros and duplicate keys (last
+    wins), and closes truncated output. Every change is listed in
+    ``result.repairs``; nothing is changed silently.
+
+    It is document-oriented: it repairs the JSON value at the start of the text.
+    For JSON embedded in prose, call :func:`extract_json` first.
+
+    Args:
+        text: Raw, possibly-malformed model output.
+        schema: If given, the repaired value is checked with
+            :func:`validate_schema`.
+
+    Raises:
+        NoJSONFoundError: when there is no JSON value to repair.
+
+    >>> r = repair_json('{"a": 1, "b": 2,}')
+    >>> r.value
+    {'a': 1, 'b': 2}
+    >>> r.repairs
+    (Repair(kind='trailing_comma', at=15, detail="removed ',' before '}'"),)
+    >>> r.repaired
+    True
+    """
+    _require_str(text, "text")
+    d = _native.repair_json(text)
+    repairs = tuple(Repair(r["kind"], r["at"], r["detail"]) for r in d["repairs"])
+    result = RepairResult(value=d["value"], repairs=repairs, incomplete=bool(d["incomplete"]))
+    if schema is not None:
+        _native.validate_schema(result.value, schema)
+    return result
 
 
 # ---------------------------------------------------------------- tool calls

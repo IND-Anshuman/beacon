@@ -12,6 +12,7 @@ pub mod json;
 pub mod normalize;
 pub mod parse_tool_call;
 pub mod redact;
+pub mod repair;
 pub mod retry;
 pub mod template;
 pub mod validate_schema;
@@ -140,6 +141,24 @@ mod _beacon_native {
             list.append(call_to_py(py, call, include_format)?)?;
         }
         Ok(list)
+    }
+
+    #[pyfunction]
+    fn repair_json<'py>(py: Python<'py>, text: &str) -> PyResult<Bound<'py, PyDict>> {
+        let out = crate::repair::repair(text).map_err(|e| to_py_err(py, e))?;
+        let d = PyDict::new(py);
+        d.set_item("value", value_to_py(py, &out.value)?)?;
+        let repairs = PyList::empty(py);
+        for r in &out.repairs {
+            let rd = PyDict::new(py);
+            rd.set_item("kind", r.kind)?;
+            rd.set_item("at", r.at)?;
+            rd.set_item("detail", &r.detail)?;
+            repairs.append(rd)?;
+        }
+        d.set_item("repairs", repairs)?;
+        d.set_item("incomplete", out.incomplete)?;
+        Ok(d)
     }
 
     fn run_validation(

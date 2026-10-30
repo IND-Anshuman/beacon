@@ -1,0 +1,20 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: repair_json/nan_infinity
+input:
+  text: "{\"a\": NaN, \"b\": Infinity, \"c\": -Infinity}"
+value:
+  value:
+    a: null
+    b: null
+    c: null
+  incomplete: false
+  repairs:
+    - kind: nan_infinity
+      at: 6
+      detail: replaced NaN with null
+    - kind: nan_infinity
+      at: 16
+      detail: replaced Infinity with null
+    - kind: nan_infinity
+      at: 31
+      detail: replaced Infinity with null

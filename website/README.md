@@ -24,4 +24,4 @@ npm run build     # static site in dist/
 Deployment: `.github/workflows/docs.yml` builds the wasm engine and the site
 and publishes to GitHub Pages. `SITE_URL`, `BASE_PATH` and `PUBLIC_REPO_URL`
 are set automatically there. `PUBLIC_REPO_URL` defaults to
-https://github.com/IND-Anshuman/beacon. The live site is https://ind-anshuman.github.io/beacon/.
+https://github.com/IND-Anshuman/beacon. The live site is https://www.anshumanbuilds.dev/beacon/.

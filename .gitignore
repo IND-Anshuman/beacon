@@ -9,9 +9,12 @@ __pycache__/
 dist/
 build/
 .coverage
+.claude
+
 
 # Docs site
 website/node_modules/
 website/dist/
 website/.astro/
 website/wasm/target/
+website/public/beacon.wasm
