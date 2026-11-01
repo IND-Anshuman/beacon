@@ -1,22 +1,9 @@
-//! beacon: deterministic, tested building blocks for AI pipelines.
+//! PyO3 bindings for beacon.
 //!
-//! The pure-Rust core lives in the block modules below and never touches
+//! The pure-Rust core lives in the `beacon-core` crate and never touches
 //! Python. The PyO3 module `beacon._beacon_native` (behind the default
 //! `python` feature) converts arguments, calls the core, and maps errors to
 //! the exception classes defined in `beacon/errors.py`.
-
-pub mod error;
-pub mod extract_json;
-pub mod hash;
-pub mod json;
-pub mod normalize;
-pub mod parse_tool_call;
-pub mod redact;
-pub mod repair;
-pub mod retry;
-pub mod template;
-pub mod validate_schema;
-pub mod value;
 
 #[cfg(feature = "python")]
 mod convert;
@@ -30,14 +17,14 @@ mod _beacon_native {
     use crate::convert::{
         errors_to_py, hash_py, py_to_value, schema_validation_err, template_value, to_py_err, value_to_py,
     };
-    use crate::extract_json::{Kind, Select};
-    use crate::hash::{CanonicalHasher, check_length};
-    use crate::normalize::{Form, Options};
-    use crate::parse_tool_call::ToolCall;
-    use crate::redact::Spec;
-    use crate::retry::{self, Policy};
-    use crate::template::Escape;
-    use crate::value::Value;
+    use beacon_core::extract_json::{Kind, Select};
+    use beacon_core::hash::{CanonicalHasher, check_length};
+    use beacon_core::normalize::{Form, Options};
+    use beacon_core::parse_tool_call::ToolCall;
+    use beacon_core::redact::Spec;
+    use beacon_core::retry::{self, Policy};
+    use beacon_core::template::Escape;
+    use beacon_core::value::Value;
 
     #[pymodule_export]
     const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -45,7 +32,7 @@ mod _beacon_native {
     /// The Unicode version of the normalization tables, as "major.minor.patch".
     #[pyfunction]
     fn unicode_version() -> String {
-        let (a, b, c) = unicode_normalization::UNICODE_VERSION;
+        let (a, b, c) = beacon_core::unicode_version();
         format!("{a}.{b}.{c}")
     }
 
@@ -65,12 +52,12 @@ mod _beacon_native {
             let value = template_value(&name, &v)?;
             vars.push((name, value));
         }
-        crate::template::render(source, &vars, escape, strict).map_err(|e| to_py_err(py, e))
+        beacon_core::template::render(source, &vars, escape, strict).map_err(|e| to_py_err(py, e))
     }
 
     #[pyfunction]
     fn template_variables(py: Python<'_>, source: &str) -> PyResult<Vec<String>> {
-        crate::template::variables(source).map_err(|e| to_py_err(py, e))
+        beacon_core::template::variables(source).map_err(|e| to_py_err(py, e))
     }
 
     #[pyfunction]
@@ -85,9 +72,9 @@ mod _beacon_native {
         let select = Select::parse(select).map_err(|e| to_py_err(py, e))?;
         let kind = Kind::parse(kind).map_err(|e| to_py_err(py, e))?;
         let found = if required {
-            Some(crate::extract_json::extract_required(text, select, kind).map_err(|e| to_py_err(py, e))?)
+            Some(beacon_core::extract_json::extract_required(text, select, kind).map_err(|e| to_py_err(py, e))?)
         } else {
-            crate::extract_json::extract(text, select, kind).map_err(|e| to_py_err(py, e))?
+            beacon_core::extract_json::extract(text, select, kind).map_err(|e| to_py_err(py, e))?
         };
         match found {
             Some(e) => value_to_py(py, &e.value),
@@ -105,7 +92,7 @@ mod _beacon_native {
     ) -> PyResult<Bound<'py, PyDict>> {
         let select = Select::parse(select).map_err(|e| to_py_err(py, e))?;
         let kind = Kind::parse(kind).map_err(|e| to_py_err(py, e))?;
-        let e = crate::extract_json::extract_required(text, select, kind).map_err(|e| to_py_err(py, e))?;
+        let e = beacon_core::extract_json::extract_required(text, select, kind).map_err(|e| to_py_err(py, e))?;
         let d = PyDict::new(py);
         d.set_item("value", value_to_py(py, &e.value)?)?;
         d.set_item("start", e.start)?;
@@ -128,14 +115,14 @@ mod _beacon_native {
     #[pyfunction]
     #[pyo3(signature = (text, include_format))]
     fn parse_tool_call<'py>(py: Python<'py>, text: &str, include_format: bool) -> PyResult<Bound<'py, PyDict>> {
-        let call = crate::parse_tool_call::parse_one(text).map_err(|e| to_py_err(py, e))?;
+        let call = beacon_core::parse_tool_call::parse_one(text).map_err(|e| to_py_err(py, e))?;
         call_to_py(py, call, include_format)
     }
 
     #[pyfunction]
     #[pyo3(signature = (text, include_format))]
     fn parse_tool_calls<'py>(py: Python<'py>, text: &str, include_format: bool) -> PyResult<Bound<'py, PyList>> {
-        let calls = crate::parse_tool_call::parse_all(text).map_err(|e| to_py_err(py, e))?;
+        let calls = beacon_core::parse_tool_call::parse_all(text).map_err(|e| to_py_err(py, e))?;
         let list = PyList::empty(py);
         for call in calls {
             list.append(call_to_py(py, call, include_format)?)?;
@@ -145,7 +132,7 @@ mod _beacon_native {
 
     #[pyfunction]
     fn repair_json<'py>(py: Python<'py>, text: &str) -> PyResult<Bound<'py, PyDict>> {
-        let out = crate::repair::repair(text).map_err(|e| to_py_err(py, e))?;
+        let out = beacon_core::repair::repair(text).map_err(|e| to_py_err(py, e))?;
         let d = PyDict::new(py);
         d.set_item("value", value_to_py(py, &out.value)?)?;
         let repairs = PyList::empty(py);
@@ -165,10 +152,10 @@ mod _beacon_native {
         py: Python<'_>,
         instance: &Bound<'_, PyAny>,
         schema: &Bound<'_, PyAny>,
-    ) -> PyResult<Vec<crate::validate_schema::ValidationError>> {
+    ) -> PyResult<Vec<beacon_core::validate_schema::ValidationError>> {
         let instance = py_to_value(instance, "", 0)?;
         let schema = py_to_value(schema, "", 0)?;
-        crate::validate_schema::validate(&instance, &schema).map_err(|e| to_py_err(py, e))
+        beacon_core::validate_schema::validate(&instance, &schema).map_err(|e| to_py_err(py, e))
     }
 
     #[pyfunction]
@@ -213,7 +200,7 @@ mod _beacon_native {
             preserve_newlines,
             strip,
         };
-        Ok(crate::normalize::normalize(text, &opts))
+        Ok(beacon_core::normalize::normalize(text, &opts))
     }
 
     #[pyfunction]
@@ -226,12 +213,12 @@ mod _beacon_native {
     }
 
     fn spec_labels(py: Python<'_>, policy: &str, exclude: &[String]) -> PyResult<Vec<&'static str>> {
-        let labels = crate::redact::policy_labels(policy).map_err(|e| to_py_err(py, e))?;
+        let labels = beacon_core::redact::policy_labels(policy).map_err(|e| to_py_err(py, e))?;
         for x in exclude {
-            if !crate::redact::BUILTIN_LABELS.contains(&x.as_str()) {
+            if !beacon_core::redact::BUILTIN_LABELS.contains(&x.as_str()) {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(
                     "unknown label in exclude: '{x}'; built-in labels are {}",
-                    crate::redact::BUILTIN_LABELS.join(", ")
+                    beacon_core::redact::BUILTIN_LABELS.join(", ")
                 )));
             }
         }
@@ -250,7 +237,7 @@ mod _beacon_native {
         replacement: &str,
     ) -> PyResult<String> {
         let spec = Spec { labels: spec_labels(py, policy, &exclude)?, custom: &patterns, terms: &terms };
-        crate::redact::redact(text, &spec, replacement).map_err(|e| to_py_err(py, e))
+        beacon_core::redact::redact(text, &spec, replacement).map_err(|e| to_py_err(py, e))
     }
 
     #[pyfunction]
@@ -264,7 +251,7 @@ mod _beacon_native {
         terms: Vec<(String, Vec<String>)>,
     ) -> PyResult<Bound<'py, PyList>> {
         let spec = Spec { labels: spec_labels(py, policy, &exclude)?, custom: &patterns, terms: &terms };
-        let findings = crate::redact::detect(text, &spec).map_err(|e| to_py_err(py, e))?;
+        let findings = beacon_core::redact::detect(text, &spec).map_err(|e| to_py_err(py, e))?;
         let list = PyList::empty(py);
         for f in findings {
             let d = PyDict::new(py);

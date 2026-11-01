@@ -1,0 +1,27 @@
+[package]
+name = "beacon-python"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "PyO3 bindings for beacon-core; ships as the llm-beacon PyPI wheels (native module beacon._beacon_native)."
+publish = false
+
+[lib]
+name = "_beacon_native"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["python"]
+# The PyO3 bindings. Disable (`--no-default-features`) to type-check the
+# binding layer without a Python interpreter.
+python = ["dep:pyo3"]
+
+[dependencies]
+beacon-core = { path = "../beacon-core" }
+pyo3 = { version = "0.30", features = ["abi3-py310"], optional = true }
+
+[lints]
+workspace = true

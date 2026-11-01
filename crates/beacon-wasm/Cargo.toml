@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # The pure-Rust core only: no PyO3.
-beacon = { package = "beacon", path = "../..", default-features = false }
+beacon-core = { path = "../beacon-core" }
 
 [profile.release]
 opt-level = "z"

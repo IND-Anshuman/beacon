@@ -7,9 +7,9 @@ name: Docs site
 on:
   push:
     branches: [main]
-    paths: ["website/**", "src/**", "python/**", "Cargo.toml", "Cargo.lock", ".github/workflows/docs.yml"]
+    paths: ["website/**", "crates/**", "python/**", "Cargo.toml", "Cargo.lock", ".github/workflows/docs.yml"]
   pull_request:
-    paths: ["website/**", "src/**", "python/**", "Cargo.toml", "Cargo.lock"]
+    paths: ["website/**", "crates/**", "python/**", "Cargo.toml", "Cargo.lock"]
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: website/wasm
+          workspaces: crates/beacon-wasm
       - uses: actions/setup-node@v4
         with:
           node-version: 22

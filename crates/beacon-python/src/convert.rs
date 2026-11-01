@@ -7,10 +7,10 @@ use pyo3::exceptions::{PyRuntimeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyBytes, PyDict, PyFloat, PyInt, PyList, PyString, PyTuple};
 
-use crate::error::{BlockError, ErrorKind};
-use crate::hash::CanonicalHasher;
-use crate::validate_schema::ValidationError;
-use crate::value::Value;
+use beacon_core::error::{BlockError, ErrorKind};
+use beacon_core::hash::CanonicalHasher;
+use beacon_core::validate_schema::ValidationError;
+use beacon_core::value::Value;
 
 /// Maximum nesting depth accepted when converting Python data.
 pub const MAX_DEPTH: usize = 512;
@@ -254,7 +254,7 @@ pub fn schema_validation_err(py: Python<'_>, errors: &[ValidationError]) -> PyEr
         let kwargs = PyDict::new(py);
         kwargs.set_item("errors", errors_to_py(py, errors)?)?;
         kwargs.set_item("code", "schema.validation_failed")?;
-        let message = crate::validate_schema::format_errors(errors);
+        let message = beacon_core::validate_schema::format_errors(errors);
         Ok(PyErr::from_value(class.call((message,), Some(&kwargs))?))
     };
     build().unwrap_or_else(|e| PyRuntimeError::new_err(format!("beacon: could not raise SchemaValidationError: {e}")))

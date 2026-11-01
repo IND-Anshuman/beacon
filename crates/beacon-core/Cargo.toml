@@ -1,0 +1,28 @@
+[package]
+name = "beacon-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Deterministic, tested building blocks for AI pipelines: JSON extraction/repair, tool-call parsing, JSON Schema validation, templating, normalization, canonical hashing, redaction and retry classification. Pure Rust, no clock/RNG/locale/network."
+readme = "README.md"
+keywords = ["llm", "determinism", "json", "json-schema", "prompt"]
+categories = ["parser-implementations", "text-processing"]
+
+[lib]
+name = "beacon_core"
+
+[dependencies]
+# "pure": portable Rust implementation (SIMD via intrinsics), no C toolchain needed.
+blake3 = { version = "1.8", features = ["pure"] }
+regex = { version = "1.12", default-features = false, features = ["std", "perf", "unicode"] }
+aho-corasick = "1.1"
+unicode-normalization = "0.1.24"
+
+[dev-dependencies]
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
+
+[lints]
+workspace = true

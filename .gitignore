@@ -16,5 +16,5 @@ build/
 website/node_modules/
 website/dist/
 website/.astro/
-website/wasm/target/
+crates/beacon-wasm/target/
 website/public/beacon.wasm

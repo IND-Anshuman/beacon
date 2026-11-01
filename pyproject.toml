@@ -60,6 +60,7 @@ beacon = "beacon.pytest_plugin"
 
 
 [tool.maturin]
+manifest-path = "crates/beacon-python/Cargo.toml"
 python-source = "python"
 module-name = "beacon._beacon_native"
 features = ["python"]
