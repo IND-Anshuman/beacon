@@ -43,7 +43,7 @@ langchain = ["langchain-core>=0.3"]
 llamaindex = ["llama-index-core>=0.11"]
 pydantic-ai = ["pydantic-ai>=0.4"]
 dspy = ["dspy>=2.6"]
-test = ["pytest>=8", "pyyaml>=6"]
+test = ["pytest>=8", "pyyaml>=6", "hypothesis>=6"]
 
 [project.urls]
 Homepage = "https://www.anshumanbuilds.dev/beacon/"
