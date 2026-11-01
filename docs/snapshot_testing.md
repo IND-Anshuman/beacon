@@ -148,3 +148,22 @@ Each case records the result, or the `BeaconError` / `ValueError` / `TypeError`
 it raised (so functions that reject some inputs are captured deterministically).
 Every mismatch is collected and reported together, not just the first.
 
+## Record / replay (VCR for LLMs)
+
+`beacon.replay.Cassette` records real provider responses once and replays them
+byte-identically, so snapshot tests can run against real traffic with no network
+in CI:
+
+```python
+from beacon.replay import Cassette
+
+tape = Cassette("tests/cassettes/intents.json")   # auto: replay if present, else record
+request = {"model": "gpt-4o", "messages": [...]}
+response = tape.play(request, lambda: client.chat.completions.create(**request))
+data = extract_json(response["choices"][0]["message"]["content"])
+```
+
+Requests are keyed by `hash_content` (order-independent, deterministic) and
+responses are stored as JSON-like data. Set `mode="replay"` (or
+`BEACON_CASSETTE_MODE=replay`) in CI so an unrecorded request raises instead of
+calling out; `mode="record"` re-records.
