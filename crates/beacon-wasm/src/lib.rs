@@ -9,17 +9,17 @@
 //! Requests are parsed with beacon's own strict JSON parser and every block
 //! runs the exact code the Python package runs, so results are identical.
 
-use beacon::error::{BlockError, ErrorKind};
-use beacon::extract_json::{self, Kind, Select};
-use beacon::hash::hash_value;
-use beacon::json::parse_document;
-use beacon::normalize::{self, Form, Options};
-use beacon::parse_tool_call;
-use beacon::redact::{self, Spec};
-use beacon::retry::{self, Policy};
-use beacon::template::{self, Escape};
-use beacon::validate_schema;
-use beacon::value::{Value, write_json_string};
+use beacon_core::error::{BlockError, ErrorKind};
+use beacon_core::extract_json::{self, Kind, Select};
+use beacon_core::hash::hash_value;
+use beacon_core::json::parse_document;
+use beacon_core::normalize::{self, Form, Options};
+use beacon_core::parse_tool_call;
+use beacon_core::redact::{self, Spec};
+use beacon_core::retry::{self, Policy};
+use beacon_core::template::{self, Escape};
+use beacon_core::validate_schema;
+use beacon_core::value::{Value, write_json_string};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn alloc(len: usize) -> *mut u8 {

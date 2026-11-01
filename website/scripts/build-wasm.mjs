@@ -7,7 +7,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const crate = join(root, 'wasm');
+// beacon-wasm moved into the Cargo workspace tree at <repo>/crates/beacon-wasm
+// (excluded from the workspace, so it keeps its own target dir and profile).
+const crate = join(root, '..', 'crates', 'beacon-wasm');
 
 execFileSync('cargo', ['build', '--release', '--target', 'wasm32-unknown-unknown'], {
   cwd: crate,
