@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 # PyPI distribution name ("beacon" is taken). The import name is still `beacon`.
 name = "llm-beacon"
-version = "0.1.0"
+version = "0.3.0"
 description = "Deterministic, tested building blocks for AI pipelines: templates, JSON extraction, tool-call parsing, schema validation, redaction, retry classification and snapshot testing."
 readme = "README.md"
 license = "MIT"
