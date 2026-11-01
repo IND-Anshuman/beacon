@@ -28,6 +28,7 @@ __all__ = [
     "SchemaViolation",
     "normalize",
     "hash_content",
+    "cache_key",
     "redact",
     "detect_pii",
     "PIIFinding",
@@ -353,6 +354,28 @@ def hash_content(value: Any, *, length: int = 16) -> str:
     if not 1 <= length <= 64:
         raise ValueError(f"length must be between 1 and 64, got {length}")
     return _native.hash_content(value, length)
+
+
+def cache_key(*parts: Any, length: int = 32) -> str:
+    """A deterministic cache key for a cacheable prompt prefix.
+
+    Hashes ``parts`` (JSON-like: a system prompt, tool definitions, few-shot
+    examples — whatever forms the stable head of a prompt) into a BLAKE3 hex
+    key. Same parts, same key, on every machine, so it can name a prompt-cache
+    entry or mark a provider cache breakpoint.
+
+    Part order is significant (it is the order the parts appear in the prompt);
+    dict key order *within* a part is not. Accepts the types
+    :func:`hash_content` accepts.
+
+    >>> cache_key("You are a helpful assistant.") == cache_key("You are a helpful assistant.")
+    True
+    >>> cache_key("sys", ["a", "b"]) != cache_key("sys", ["b", "a"])
+    True
+    """
+    if not parts:
+        raise ValueError("cache_key requires at least one part")
+    return hash_content(list(parts), length=length)
 
 
 # ---------------------------------------------------------------- redact

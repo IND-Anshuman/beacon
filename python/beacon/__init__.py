@@ -6,7 +6,7 @@ every machine. See ``docs/determinism_guarantees.md`` for the contract.
 
 from __future__ import annotations
 
-from . import _beacon_native, retry
+from . import _beacon_native, aio, retry
 from ._api import (
     Extraction,
     PIIFinding,
@@ -14,6 +14,7 @@ from ._api import (
     RepairResult,
     SchemaViolation,
     ToolCall,
+    cache_key,
     detect_pii,
     extract_json,
     extract_json_detailed,
@@ -66,9 +67,11 @@ __all__ = [
     "validate_model",
     "normalize",
     "hash_content",
+    "cache_key",
     "redact",
     "detect_pii",
     "retry",
+    "aio",
     # result types
     "Extraction",
     "RepairResult",

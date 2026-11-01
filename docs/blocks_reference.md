@@ -371,6 +371,26 @@ records `hash_content` of every step's input and output (`None` if not
 hashable). `PipelineResult.trace()` returns plain dicts ready for
 `assert_snapshot`.
 
+`Pipeline.arun` / `Pipeline.arun_traced` are the async counterparts: a block
+whose output is awaitable is awaited, so a pipeline can mix synchronous blocks
+with a coroutine one (e.g. an LLM call). Synchronous blocks run inline.
+
+## Async (`beacon.aio`)
+
+```python
+from beacon import aio
+data = await aio.extract_json(text, schema=schema)
+```
+
+`beacon.aio` mirrors every block in the core with an `await`-able coroutine of
+the same name and signature (`aio.extract_json`, `aio.repair_json`,
+`aio.validate_schema`, `aio.redact`, …). Each runs its synchronous counterpart
+on a worker thread via `asyncio.to_thread`, so the event loop keeps serving
+other tasks while beacon works and no caller needs `run_in_executor`. Results,
+errors and determinism are identical to the sync API. In synchronous code, call
+the functions in `beacon` directly — the blocks are fast and CPU-bound, so the
+thread hop only pays off when you are already on an event loop.
+
 ## Error codes
 
 Codes are stable (see the compatibility rules in

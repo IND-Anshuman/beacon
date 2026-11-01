@@ -15,6 +15,7 @@ deterministic fingerprint you can snapshot-test.
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Sequence, Union
 
@@ -119,6 +120,36 @@ class Pipeline(Block):
         for i, block in enumerate(self.blocks[1:], start=1):
             in_hash = steps[-1].output_hash
             value = block.run(value)
+            steps.append(StepRecord(i, block.label, in_hash, _safe_hash(value)))
+        return PipelineResult(value, tuple(steps))
+
+    async def arun(self, *args: Any, **kwargs: Any) -> Any:
+        """Async :meth:`run`: a block whose output is awaitable is awaited, so a
+        pipeline may mix synchronous blocks with coroutine ones (e.g. an LLM
+        call). Synchronous blocks run inline, exactly as in :meth:`run`."""
+        value = self.blocks[0].run(*args, **kwargs)
+        if inspect.isawaitable(value):
+            value = await value
+        for block in self.blocks[1:]:
+            value = block.run(value)
+            if inspect.isawaitable(value):
+                value = await value
+        return value
+
+    async def arun_traced(self, *args: Any, **kwargs: Any) -> PipelineResult:
+        """Async :meth:`run_traced`: awaits awaitable block outputs, recording
+        the content hash of every step's input and output."""
+        first_input: Any = {"args": list(args), "kwargs": kwargs} if kwargs or len(args) != 1 else args[0]
+        steps = []
+        value = self.blocks[0].run(*args, **kwargs)
+        if inspect.isawaitable(value):
+            value = await value
+        steps.append(StepRecord(0, self.blocks[0].label, _safe_hash(first_input), _safe_hash(value)))
+        for i, block in enumerate(self.blocks[1:], start=1):
+            in_hash = steps[-1].output_hash
+            value = block.run(value)
+            if inspect.isawaitable(value):
+                value = await value
             steps.append(StepRecord(i, block.label, in_hash, _safe_hash(value)))
         return PipelineResult(value, tuple(steps))
 
