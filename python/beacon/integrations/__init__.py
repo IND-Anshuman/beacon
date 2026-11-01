@@ -4,6 +4,12 @@ lazily, so ``import beacon`` never pulls in LangChain, LlamaIndex, etc.
 * :mod:`beacon.integrations.openai_sdk` — no extra dependency (duck-typed)
 * :mod:`beacon.integrations.anthropic_sdk` — no extra dependency (duck-typed)
 * :mod:`beacon.integrations.gemini_sdk` — no extra dependency (duck-typed)
+* :mod:`beacon.integrations.litellm` — ``pip install "llm-beacon[litellm]"``
+  (only to make real calls; response parsing is duck-typed)
+* :mod:`beacon.integrations.otel` — ``pip install "llm-beacon[otel]"`` (only
+  when no tracer is injected)
+* :mod:`beacon.integrations.mcp` — no extra dependency (duck-typed); the ``mcp``
+  SDK is only needed to run a server/client (``pip install "llm-beacon[mcp]"``)
 * :mod:`beacon.integrations.langchain` — ``pip install "llm-beacon[langchain]"``
 * :mod:`beacon.integrations.llamaindex` — ``pip install "llm-beacon[llamaindex]"``
 * :mod:`beacon.integrations.pydantic_ai` — works without Pydantic AI; uses
