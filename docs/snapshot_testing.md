@@ -128,3 +128,23 @@ A runnable version is in `examples/08_snapshot_testing_your_app.py`.
   behaviour change, since it may be what you feed back to the model.
 * Prefer small, named snapshots over one large blob. Diffs stay readable.
 * When a snapshot changes, read the diff before running `update`.
+
+## Golden datasets
+
+`assert_golden(name, fn, cases)` runs `fn` over a whole corpus and snapshots
+each case under `name/<case>.yaml`, so one call gates a dataset in CI:
+
+```python
+from beacon.snapshots import assert_golden
+
+def test_intents():
+    assert_golden("intents", extract_json, {
+        "cancel": load_fixture("cancel.txt"),
+        "refund": load_fixture("refund.txt"),
+    })
+```
+
+Each case records the result, or the `BeaconError` / `ValueError` / `TypeError`
+it raised (so functions that reject some inputs are captured deterministically).
+Every mismatch is collected and reported together, not just the first.
+

@@ -48,6 +48,7 @@ from .errors import BeaconError, SnapshotMismatchError
 
 __all__ = [
     "assert_snapshot",
+    "assert_golden",
     "snapshot_test",
     "render_snapshot",
     "to_snapshot_data",
@@ -263,6 +264,58 @@ def assert_snapshot(
 
 #: Alias matching the name used in the project brief.
 snapshot_test = assert_snapshot
+
+
+def assert_golden(
+    name: str,
+    fn: Any,
+    cases: Mapping[str, Any],
+    *,
+    record_input: bool = True,
+    directory: Union[str, os.PathLike[str], None] = None,
+    mode: Optional[SnapshotMode] = None,
+) -> None:
+    """Golden-compare ``fn`` over a whole corpus — snapshots for datasets.
+
+    ``cases`` maps case names to inputs. For each case (in sorted order), ``fn``
+    runs on the input and its result — or its :class:`~beacon.BeaconError` /
+    ``ValueError`` / ``TypeError`` — is snapshotted under ``name/<case>.yaml``,
+    so a function that raises on some inputs is still captured deterministically.
+    Every mismatch is collected and reported together, so one call gates an
+    entire corpus in CI.
+
+    Args:
+        name: Corpus name; each case becomes ``name/<case>.yaml``.
+        fn: Called once per case as ``fn(input)``.
+        cases: ``{case_name: input}``.
+        record_input: Record each input alongside its output (default ``True``).
+        directory, mode: As for :func:`assert_snapshot`.
+
+    Raises:
+        SnapshotMismatchError: listing every failing case.
+    """
+    _check_name(name)
+    failures: list[tuple[str, SnapshotMismatchError]] = []
+    for case in sorted(cases):
+        inp = cases[case]
+        try:
+            outcome: dict[str, Any] = {"ok": to_snapshot_data(fn(inp))}
+        except (BeaconError, ValueError, TypeError) as exc:
+            outcome = {"error": to_snapshot_data(exc)}
+        snap_name = f"{name}/{_sanitize(str(case))}"
+        try:
+            assert_snapshot(snap_name, outcome, input=(inp if record_input else _MISSING), directory=directory, mode=mode)
+        except SnapshotMismatchError as exc:
+            failures.append((case, exc))
+    if failures:
+        detail = "\n\n".join(f"[{c}] {e}" for c, e in failures)
+        raise SnapshotMismatchError(
+            f"{len(failures)} of {len(cases)} golden case(s) in {name!r} failed: "
+            + ", ".join(str(c) for c, _ in failures)
+            + "\n\n"
+            + detail,
+            code="golden.mismatch",
+        )
 
 
 def _sanitize(part: str) -> str:
