@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: detect_injection/sql_or_tautology
+input:
+  text: "username = 'admin' OR '1'='1'"
+value:
+  - label: sql_injection
+    severity: high
+    start: 17
+    end: 28
+    text: "' OR '1'='1"
+    path: ""

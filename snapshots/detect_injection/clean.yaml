@@ -1,0 +1,5 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: detect_injection/clean
+input:
+  text: "Translate this paragraph into French, please."
+value: []

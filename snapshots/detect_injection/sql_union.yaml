@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: detect_injection/sql_union
+input:
+  text: "0 UNION SELECT credit_card FROM payments"
+value:
+  - label: sql_injection
+    severity: high
+    start: 2
+    end: 14
+    text: UNION SELECT
+    path: ""

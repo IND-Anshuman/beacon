@@ -1,0 +1,11 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: detect_injection/sql_stacked
+input:
+  text: "1; DROP TABLE sessions"
+value:
+  - label: sql_injection
+    severity: high
+    start: 1
+    end: 7
+    text: "; DROP"
+    path: ""
