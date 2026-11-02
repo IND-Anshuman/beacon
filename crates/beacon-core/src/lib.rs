@@ -22,6 +22,7 @@ pub mod hash;
 pub mod json;
 pub mod normalize;
 pub mod parse_tool_call;
+pub mod partial;
 pub mod redact;
 pub mod repair;
 pub mod retry;
