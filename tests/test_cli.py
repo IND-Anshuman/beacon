@@ -60,6 +60,18 @@ def test_repair_no_json_exits_1(capsys: pytest.CaptureFixture[str]) -> None:
     assert "beacon:" in capsys.readouterr().err
 
 
+def test_partial_closes_truncated_input(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["partial", "-t", '{"a": [1, 2']) == 0
+    out = capsys.readouterr()
+    assert json.loads(out.out) == {"a": [1, 2]}
+    assert "complete=False" in out.err
+
+
+def test_partial_strict_exits_1_when_incomplete(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["partial", "-t", '{"a": 1}']) == 0  # tolerant by default
+    assert main(["partial", "-t", '{"a": [1, 2', "--strict"]) == 1
+
+
 def test_redact(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["redact", "-t", "Email me at alice@example.com"]) == 0
     assert capsys.readouterr().out == "Email me at [REDACTED:email]"
