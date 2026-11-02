@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/url_in_parens
+input:
+  text: "(see https://example.org/x) for context"
+value:
+  - kind: url
+    ref: "https://example.org/x"
+    start: 5
+    end: 26
+    text: "https://example.org/x"

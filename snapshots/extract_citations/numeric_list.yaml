@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/numeric_list
+input:
+  text: "Multiple sources [1, 2, 3] agree."
+value:
+  - kind: numeric
+    ref: "1, 2, 3"
+    start: 17
+    end: 26
+    text: "[1, 2, 3]"

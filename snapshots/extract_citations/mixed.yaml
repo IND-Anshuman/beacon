@@ -1,0 +1,20 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/mixed
+input:
+  text: "Per [1] and[^a], see https://docs.example.com/guide#top."
+value:
+  - kind: numeric
+    ref: "1"
+    start: 4
+    end: 7
+    text: "[1]"
+  - kind: footnote
+    ref: a
+    start: 11
+    end: 15
+    text: "[^a]"
+  - kind: url
+    ref: "https://docs.example.com/guide#top"
+    start: 21
+    end: 55
+    text: "https://docs.example.com/guide#top"

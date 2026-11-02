@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/numeric_single
+input:
+  text: "The study [1] found this."
+value:
+  - kind: numeric
+    ref: "1"
+    start: 10
+    end: 13
+    text: "[1]"

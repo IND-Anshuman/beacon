@@ -1,0 +1,5 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/none
+input:
+  text: no citations here at all
+value: []

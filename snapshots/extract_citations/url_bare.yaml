@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/url_bare
+input:
+  text: "Read more at https://example.com/path."
+value:
+  - kind: url
+    ref: "https://example.com/path"
+    start: 13
+    end: 37
+    text: "https://example.com/path"

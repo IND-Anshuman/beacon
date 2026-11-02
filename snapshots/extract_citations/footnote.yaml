@@ -1,0 +1,15 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/footnote
+input:
+  text: "A claim[^1] with a footnote[^longer-id]."
+value:
+  - kind: footnote
+    ref: "1"
+    start: 7
+    end: 11
+    text: "[^1]"
+  - kind: footnote
+    ref: longer-id
+    start: 27
+    end: 39
+    text: "[^longer-id]"

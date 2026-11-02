@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: extract_citations/numeric_range
+input:
+  text: "See references [4-6] for details."
+value:
+  - kind: numeric
+    ref: "4-6"
+    start: 15
+    end: 20
+    text: "[4-6]"
