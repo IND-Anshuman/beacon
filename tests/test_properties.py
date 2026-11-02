@@ -13,15 +13,19 @@ from hypothesis import strategies as st  # noqa: E402
 
 import beacon  # noqa: E402
 from beacon import (  # noqa: E402
+    detect_injection,
     detect_pii,
+    extract_citations,
     extract_json,
     extract_json_detailed,
     hash_content,
     normalize,
+    parse_partial,
     parse_tool_call,
     parse_tool_calls,
     redact,
     repair_json,
+    scan_arguments,
     template_variables,
     validate_schema,
 )
@@ -52,11 +56,14 @@ _TEXT_BLOCKS = (
     extract_json,
     extract_json_detailed,
     repair_json,
+    parse_partial,
     parse_tool_call,
     parse_tool_calls,
     normalize,
     redact,
     detect_pii,
+    extract_citations,
+    detect_injection,
     template_variables,
     hash_content,
 )
@@ -101,6 +108,31 @@ def test_repaired_output_is_valid_json(text: str) -> None:
     again = repair_json(json.dumps(r.value))
     assert again.value == r.value
     assert again.repairs == () and not again.incomplete
+
+
+@settings(max_examples=300, deadline=None)
+@given(value=json_values)
+def test_parse_partial_prefixes_converge(value: object) -> None:
+    # Every prefix of a serialized JSON value parses without crashing, and the
+    # final (whole) prefix reproduces the value as a complete result.
+    full = json.dumps(value)
+    for i in range(len(full) + 1):
+        r = parse_partial(full[:i])
+        assert isinstance(r.consumed, int) and r.consumed >= 0
+    final = parse_partial(full)
+    assert final.complete is True
+    assert final.value == value
+
+
+@settings(max_examples=200, deadline=None)
+@given(value=json_values)
+def test_scan_arguments_never_crashes(value: object) -> None:
+    # Any JSON-like arguments structure scans without crashing.
+    try:
+        findings = scan_arguments(value)
+    except ALLOWED:
+        return
+    assert isinstance(findings, list)
 
 
 @settings(max_examples=300, deadline=None)
