@@ -20,6 +20,7 @@ pub mod citations;
 pub mod error;
 pub mod extract_json;
 pub mod hash;
+pub mod injection;
 pub mod json;
 pub mod normalize;
 pub mod parse_tool_call;
