@@ -2,7 +2,7 @@
 
 Each function here runs its synchronous counterpart on a worker thread with
 :func:`asyncio.to_thread`, so it is a true coroutine that yields to the event
-loop â€” the loop keeps serving other tasks (your in-flight model HTTP calls, for
+loop — the loop keeps serving other tasks (your in-flight model HTTP calls, for
 example) while beacon works, and no caller has to reach for ``run_in_executor``.
 
 The result is identical to the synchronous API, which these delegate to:
@@ -11,7 +11,7 @@ The result is identical to the synchronous API, which these delegate to:
     data = await aio.extract_json(text, schema=schema)
 
 The blocks are fast, CPU-bound and deterministic, so in *synchronous* code call
-the sync functions in :mod:`beacon` directly â€” the thread hop here only earns
+the sync functions in :mod:`beacon` directly — the thread hop here only earns
 its keep when you are already on an event loop.
 """
 
@@ -28,6 +28,8 @@ from ._api import (
     Escape,
     Extraction,
     Form,
+    InjectionFinding,
+    InjectionPolicy,
     Kind,
     PartialResult,
     PIIFinding,
@@ -58,6 +60,8 @@ __all__ = [
     "redact",
     "detect_pii",
     "extract_citations",
+    "detect_injection",
+    "scan_arguments",
 ]
 
 
@@ -214,3 +218,13 @@ async def extract_citations(
 ) -> list[Citation]:
     """Async version of :func:`beacon.extract_citations`."""
     return await asyncio.to_thread(_api.extract_citations, text, kinds=kinds)
+
+
+async def detect_injection(text: str, *, policy: InjectionPolicy = "default") -> list[InjectionFinding]:
+    """Async version of :func:`beacon.detect_injection`."""
+    return await asyncio.to_thread(_api.detect_injection, text, policy=policy)
+
+
+async def scan_arguments(arguments: Any, *, policy: InjectionPolicy = "default") -> list[InjectionFinding]:
+    """Async version of :func:`beacon.scan_arguments`."""
+    return await asyncio.to_thread(_api.scan_arguments, arguments, policy=policy)

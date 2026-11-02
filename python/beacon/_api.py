@@ -37,6 +37,10 @@ __all__ = [
     "extract_citations",
     "Citation",
     "CitationKind",
+    "detect_injection",
+    "scan_arguments",
+    "InjectionFinding",
+    "InjectionPolicy",
 ]
 
 Escape = Literal["xml", "json", "none"]
@@ -45,6 +49,7 @@ Kind = Literal["auto", "any", "object", "array"]
 Form = Literal["NFC", "NFD", "NFKC", "NFKD"]
 Policy = Literal["default", "strict", "secrets", "pii", "none"]
 CitationKind = Literal["numeric", "footnote", "url"]
+InjectionPolicy = Literal["default", "none"]
 JSONValue = Union[None, bool, int, float, str, list, dict]
 
 _ALL_CITATION_KINDS: tuple[CitationKind, ...] = ("numeric", "footnote", "url")
@@ -209,7 +214,7 @@ def repair_json(text: str, *, schema: Optional[Mapping[str, Any]] = None) -> Rep
 
     Unlike :func:`extract_json` (strict, never repairs), this accepts trailing
     commas, single-quoted strings, unquoted keys, Python ``True``/``False``/
-    ``None``, comments, ``NaN``/``Infinity`` (â†’ ``null``), smart quotes, literal
+    ``None``, comments, ``NaN``/``Infinity`` (→ ``null``), smart quotes, literal
     control characters, a leading BOM, leading zeros and duplicate keys (last
     wins), and closes truncated output. Every change is listed in
     ``result.repairs``; nothing is changed silently.
@@ -369,13 +374,13 @@ def normalize(
 ) -> str:
     """Canonical text normalization, for comparing, hashing and deduplicating.
 
-    Steps run in a fixed order: Unicode normalization â†’ accent stripping â†’
-    lowercasing â†’ control-character removal â†’ zero-width removal â†’ whitespace
-    collapsing â†’ stripping. Lowercasing is locale-independent.
+    Steps run in a fixed order: Unicode normalization → accent stripping →
+    lowercasing → control-character removal → zero-width removal → whitespace
+    collapsing → stripping. Lowercasing is locale-independent.
 
     >>> normalize("Hello   World\\n\\n")
     'Hello World'
-    >>> normalize("CafÃ©", strip_accents=True)
+    >>> normalize("Café", strip_accents=True)
     'Cafe'
     """
     _require_str(text, "text")
@@ -414,7 +419,7 @@ def cache_key(*parts: Any, length: int = 32) -> str:
     """A deterministic cache key for a cacheable prompt prefix.
 
     Hashes ``parts`` (JSON-like: a system prompt, tool definitions, few-shot
-    examples â€” whatever forms the stable head of a prompt) into a BLAKE3 hex
+    examples — whatever forms the stable head of a prompt) into a BLAKE3 hex
     key. Same parts, same key, on every machine, so it can name a prompt-cache
     entry or mark a provider cache breakpoint.
 
@@ -479,7 +484,7 @@ def redact(
         terms: Exact terms, ``{label: [terms]}``, matched as whole words,
             ASCII case-insensitive.
         replacement: Template with ``{label}`` and/or ``{hash}`` (first 8 hex
-            digits of the BLAKE3 hash of the matched text â€” the same value
+            digits of the BLAKE3 hash of the matched text — the same value
             always gets the same token).
 
     >>> redact("Email me at alice@example.com")
@@ -553,3 +558,56 @@ def extract_citations(
     if isinstance(kinds, str):
         raise TypeError("kinds must be an iterable of kind names, not a str")
     return _native.extract_citations(text, [str(k) for k in kinds])  # type: ignore[return-value]
+
+
+# ---------------------------------------------------------------- injection
+
+
+class InjectionFinding(TypedDict):
+    label: str
+    severity: str
+    start: int
+    end: int
+    text: str
+    path: str
+
+
+def detect_injection(text: str, *, policy: InjectionPolicy = "default") -> list[InjectionFinding]:
+    """Flag text that *looks like* an injection attempt. Heuristic, not a gate.
+
+    Recognizes SQL injection, shell/command metacharacters, path traversal
+    (``../``) and common prompt-injection phrases, returning
+    ``{"label", "severity", "start", "end", "text", "path"}`` dicts in order
+    (offsets are code points; ``path`` is empty here). Overlapping matches are
+    merged like :func:`detect_pii`.
+
+    **This is a deterministic flag-only heuristic, not a security guarantee.**
+    It uses no ML and no network. Expect false positives (ordinary prose
+    contains ``|``, ``..`` and "ignore") and false negatives (any fixed ruleset
+    can be evaded). It flags; the caller decides. Do not use it as a sanitizer
+    or as an allow/deny gate on its own.
+
+    Args:
+        text: The untrusted text to scan.
+        policy: ``"default"`` (all detectors) or ``"none"``.
+
+    >>> [f["label"] for f in detect_injection("1 OR 1=1")]
+    ['sql_injection']
+    """
+    _require_str(text, "text")
+    return _native.detect_injection(text, policy)  # type: ignore[return-value]
+
+
+def scan_arguments(arguments: Any, *, policy: InjectionPolicy = "default") -> list[InjectionFinding]:
+    """Run :func:`detect_injection` over every string in a tool-call args dict.
+
+    Walks ``arguments`` (a JSON-like value — typically the ``arguments`` of a
+    parsed tool call) and flags injection-like spans in each string value. Each
+    finding's ``path`` is a JSON Pointer to the offending string and its offsets
+    index into that string. Same heuristic, same caveats as
+    :func:`detect_injection`.
+
+    >>> scan_arguments({"q": "x'; DROP TABLE t"})[0]["path"]
+    '/q'
+    """
+    return _native.scan_arguments(arguments, policy)  # type: ignore[return-value]

@@ -175,6 +175,39 @@ mod _beacon_native {
         Ok(list)
     }
 
+    fn findings_to_py<'py>(
+        py: Python<'py>,
+        findings: &[beacon_core::injection::Finding],
+    ) -> PyResult<Bound<'py, PyList>> {
+        let list = PyList::empty(py);
+        for f in findings {
+            let d = PyDict::new(py);
+            d.set_item("label", f.label)?;
+            d.set_item("severity", f.severity)?;
+            d.set_item("start", f.start)?;
+            d.set_item("end", f.end)?;
+            d.set_item("text", &f.text)?;
+            d.set_item("path", &f.path)?;
+            list.append(d)?;
+        }
+        Ok(list)
+    }
+
+    #[pyfunction]
+    #[pyo3(signature = (text, policy))]
+    fn detect_injection<'py>(py: Python<'py>, text: &str, policy: &str) -> PyResult<Bound<'py, PyList>> {
+        let findings = beacon_core::injection::detect(text, policy).map_err(|e| to_py_err(py, e))?;
+        findings_to_py(py, &findings)
+    }
+
+    #[pyfunction]
+    #[pyo3(signature = (arguments, policy))]
+    fn scan_arguments<'py>(py: Python<'py>, arguments: &Bound<'_, PyAny>, policy: &str) -> PyResult<Bound<'py, PyList>> {
+        let value = py_to_value(arguments, "", 0)?;
+        let findings = beacon_core::injection::scan_arguments(&value, policy).map_err(|e| to_py_err(py, e))?;
+        findings_to_py(py, &findings)
+    }
+
     fn run_validation(
         py: Python<'_>,
         instance: &Bound<'_, PyAny>,

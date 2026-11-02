@@ -1,6 +1,6 @@
-"""beacon â€” deterministic, tested building blocks for AI pipelines.
+"""beacon — deterministic, tested building blocks for AI pipelines.
 
-Every block is a pure function: same input â†’ same output, every time, on
+Every block is a pure function: same input → same output, every time, on
 every machine. See ``docs/determinism_guarantees.md`` for the contract.
 """
 
@@ -10,6 +10,7 @@ from . import _beacon_native, aio, retry
 from ._api import (
     Citation,
     Extraction,
+    InjectionFinding,
     PartialResult,
     PIIFinding,
     Repair,
@@ -17,6 +18,7 @@ from ._api import (
     SchemaViolation,
     ToolCall,
     cache_key,
+    detect_injection,
     detect_pii,
     extract_citations,
     extract_json,
@@ -28,6 +30,7 @@ from ._api import (
     parse_tool_calls,
     redact,
     repair_json,
+    scan_arguments,
     schema_errors,
     template,
     template_variables,
@@ -76,6 +79,8 @@ __all__ = [
     "redact",
     "detect_pii",
     "extract_citations",
+    "detect_injection",
+    "scan_arguments",
     "retry",
     "aio",
     # result types
@@ -87,6 +92,7 @@ __all__ = [
     "SchemaViolation",
     "PIIFinding",
     "Citation",
+    "InjectionFinding",
     "RetryAction",
     "RetryDecision",
     "RetryPolicy",
