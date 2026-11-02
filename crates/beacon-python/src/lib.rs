@@ -148,6 +148,16 @@ mod _beacon_native {
         Ok(d)
     }
 
+    #[pyfunction]
+    fn parse_partial<'py>(py: Python<'py>, text: &str) -> PyResult<Bound<'py, PyDict>> {
+        let out = beacon_core::partial::parse_partial(text);
+        let d = PyDict::new(py);
+        d.set_item("value", value_to_py(py, &out.value)?)?;
+        d.set_item("complete", out.complete)?;
+        d.set_item("consumed", out.consumed)?;
+        Ok(d)
+    }
+
     fn run_validation(
         py: Python<'_>,
         instance: &Bound<'_, PyAny>,

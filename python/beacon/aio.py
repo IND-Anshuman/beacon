@@ -2,7 +2,7 @@
 
 Each function here runs its synchronous counterpart on a worker thread with
 :func:`asyncio.to_thread`, so it is a true coroutine that yields to the event
-loop — the loop keeps serving other tasks (your in-flight model HTTP calls, for
+loop â€” the loop keeps serving other tasks (your in-flight model HTTP calls, for
 example) while beacon works, and no caller has to reach for ``run_in_executor``.
 
 The result is identical to the synchronous API, which these delegate to:
@@ -11,7 +11,7 @@ The result is identical to the synchronous API, which these delegate to:
     data = await aio.extract_json(text, schema=schema)
 
 The blocks are fast, CPU-bound and deterministic, so in *synchronous* code call
-the sync functions in :mod:`beacon` directly — the thread hop here only earns
+the sync functions in :mod:`beacon` directly â€” the thread hop here only earns
 its keep when you are already on an event loop.
 """
 
@@ -26,6 +26,7 @@ from ._api import (
     Extraction,
     Form,
     Kind,
+    PartialResult,
     PIIFinding,
     Policy,
     RepairResult,
@@ -40,6 +41,7 @@ __all__ = [
     "extract_json",
     "extract_json_detailed",
     "repair_json",
+    "parse_partial",
     "parse_tool_call",
     "parse_tool_calls",
     "validate_schema",
@@ -93,6 +95,11 @@ async def extract_json_detailed(text: str, *, select: Select = "first", kind: Ki
 async def repair_json(text: str, *, schema: Optional[Mapping[str, Any]] = None) -> RepairResult:
     """Async version of :func:`beacon.repair_json`."""
     return await asyncio.to_thread(_api.repair_json, text, schema=schema)
+
+
+async def parse_partial(text: str) -> PartialResult:
+    """Async version of :func:`beacon.parse_partial`."""
+    return await asyncio.to_thread(_api.parse_partial, text)
 
 
 async def parse_tool_call(text: str) -> ToolCall:

@@ -20,6 +20,8 @@ __all__ = [
     "repair_json",
     "RepairResult",
     "Repair",
+    "parse_partial",
+    "PartialResult",
     "parse_tool_call",
     "parse_tool_calls",
     "ToolCall",
@@ -201,7 +203,7 @@ def repair_json(text: str, *, schema: Optional[Mapping[str, Any]] = None) -> Rep
 
     Unlike :func:`extract_json` (strict, never repairs), this accepts trailing
     commas, single-quoted strings, unquoted keys, Python ``True``/``False``/
-    ``None``, comments, ``NaN``/``Infinity`` (→ ``null``), smart quotes, literal
+    ``None``, comments, ``NaN``/``Infinity`` (â†’ ``null``), smart quotes, literal
     control characters, a leading BOM, leading zeros and duplicate keys (last
     wins), and closes truncated output. Every change is listed in
     ``result.repairs``; nothing is changed silently.
@@ -232,6 +234,52 @@ def repair_json(text: str, *, schema: Optional[Mapping[str, Any]] = None) -> Rep
     if schema is not None:
         _native.validate_schema(result.value, schema)
     return result
+
+
+# ---------------------------------------------------------------- partial / streaming
+
+
+@dataclass(frozen=True)
+class PartialResult:
+    """Result of :func:`parse_partial`.
+
+    ``value`` is the structure parsed so far (truncated containers and strings
+    closed); ``complete`` is ``True`` when the input is already a whole JSON
+    value; ``consumed`` is the number of code points consumed into ``value``.
+    """
+
+    value: Any
+    complete: bool
+    consumed: int
+
+
+def parse_partial(text: str) -> PartialResult:
+    """Parse an incomplete JSON prefix as it streams, into the best value so far.
+
+    For a response that is still arriving, this returns the structure parsed so
+    far with any open containers and strings closed, and reports whether the
+    text is already a whole JSON value. It is strict JSON tolerant of one thing
+    — truncation — and, unlike :func:`repair_json`, makes no other fix-ups and
+    keeps no log. It never raises: text that is not JSON yields ``None`` with
+    ``complete=False``.
+
+    It is stateless: feed each growing buffer in again from the start. Feeding
+    successive prefixes of a value converges to that value at the final prefix.
+
+    Args:
+        text: The bytes decoded so far (a prefix of a JSON value).
+
+    >>> r = parse_partial('{"intent": "canc')
+    >>> r.value
+    {'intent': 'canc'}
+    >>> r.complete
+    False
+    >>> parse_partial('{"ok": true}').complete
+    True
+    """
+    _require_str(text, "text")
+    d = _native.parse_partial(text)
+    return PartialResult(value=d["value"], complete=bool(d["complete"]), consumed=d["consumed"])
 
 
 # ---------------------------------------------------------------- tool calls
@@ -315,13 +363,13 @@ def normalize(
 ) -> str:
     """Canonical text normalization, for comparing, hashing and deduplicating.
 
-    Steps run in a fixed order: Unicode normalization → accent stripping →
-    lowercasing → control-character removal → zero-width removal → whitespace
-    collapsing → stripping. Lowercasing is locale-independent.
+    Steps run in a fixed order: Unicode normalization â†’ accent stripping â†’
+    lowercasing â†’ control-character removal â†’ zero-width removal â†’ whitespace
+    collapsing â†’ stripping. Lowercasing is locale-independent.
 
     >>> normalize("Hello   World\\n\\n")
     'Hello World'
-    >>> normalize("Café", strip_accents=True)
+    >>> normalize("CafÃ©", strip_accents=True)
     'Cafe'
     """
     _require_str(text, "text")
@@ -360,7 +408,7 @@ def cache_key(*parts: Any, length: int = 32) -> str:
     """A deterministic cache key for a cacheable prompt prefix.
 
     Hashes ``parts`` (JSON-like: a system prompt, tool definitions, few-shot
-    examples — whatever forms the stable head of a prompt) into a BLAKE3 hex
+    examples â€” whatever forms the stable head of a prompt) into a BLAKE3 hex
     key. Same parts, same key, on every machine, so it can name a prompt-cache
     entry or mark a provider cache breakpoint.
 
@@ -425,7 +473,7 @@ def redact(
         terms: Exact terms, ``{label: [terms]}``, matched as whole words,
             ASCII case-insensitive.
         replacement: Template with ``{label}`` and/or ``{hash}`` (first 8 hex
-            digits of the BLAKE3 hash of the matched text — the same value
+            digits of the BLAKE3 hash of the matched text â€” the same value
             always gets the same token).
 
     >>> redact("Email me at alice@example.com")
