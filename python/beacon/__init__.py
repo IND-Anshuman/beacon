@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from . import _beacon_native, aio, retry
 from ._api import (
+    Citation,
     Extraction,
     PartialResult,
     PIIFinding,
@@ -17,6 +18,7 @@ from ._api import (
     ToolCall,
     cache_key,
     detect_pii,
+    extract_citations,
     extract_json,
     extract_json_detailed,
     hash_content,
@@ -73,6 +75,7 @@ __all__ = [
     "cache_key",
     "redact",
     "detect_pii",
+    "extract_citations",
     "retry",
     "aio",
     # result types
@@ -83,6 +86,7 @@ __all__ = [
     "ToolCall",
     "SchemaViolation",
     "PIIFinding",
+    "Citation",
     "RetryAction",
     "RetryDecision",
     "RetryPolicy",

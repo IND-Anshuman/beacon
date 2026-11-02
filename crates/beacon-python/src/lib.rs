@@ -158,6 +158,23 @@ mod _beacon_native {
         Ok(d)
     }
 
+    #[pyfunction]
+    fn extract_citations<'py>(py: Python<'py>, text: &str, kinds: Vec<String>) -> PyResult<Bound<'py, PyList>> {
+        let kind_refs: Vec<&str> = kinds.iter().map(String::as_str).collect();
+        let cits = beacon_core::citations::extract(text, &kind_refs).map_err(|e| to_py_err(py, e))?;
+        let list = PyList::empty(py);
+        for c in cits {
+            let d = PyDict::new(py);
+            d.set_item("kind", c.kind)?;
+            d.set_item("ref", c.reference)?;
+            d.set_item("start", c.start)?;
+            d.set_item("end", c.end)?;
+            d.set_item("text", c.text)?;
+            list.append(d)?;
+        }
+        Ok(list)
+    }
+
     fn run_validation(
         py: Python<'_>,
         instance: &Bound<'_, PyAny>,

@@ -22,6 +22,9 @@ from typing import Any, Iterable, Mapping, Optional
 
 from . import _api, _schema
 from ._api import (
+    _ALL_CITATION_KINDS,
+    Citation,
+    CitationKind,
     Escape,
     Extraction,
     Form,
@@ -54,6 +57,7 @@ __all__ = [
     "cache_key",
     "redact",
     "detect_pii",
+    "extract_citations",
 ]
 
 
@@ -201,3 +205,12 @@ async def detect_pii(
     return await asyncio.to_thread(
         _api.detect_pii, text, policy=policy, exclude=exclude, patterns=patterns, terms=terms
     )
+
+
+async def extract_citations(
+    text: str,
+    *,
+    kinds: Iterable[CitationKind] = _ALL_CITATION_KINDS,
+) -> list[Citation]:
+    """Async version of :func:`beacon.extract_citations`."""
+    return await asyncio.to_thread(_api.extract_citations, text, kinds=kinds)

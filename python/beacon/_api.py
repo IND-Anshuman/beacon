@@ -34,6 +34,9 @@ __all__ = [
     "redact",
     "detect_pii",
     "PIIFinding",
+    "extract_citations",
+    "Citation",
+    "CitationKind",
 ]
 
 Escape = Literal["xml", "json", "none"]
@@ -41,7 +44,10 @@ Select = Literal["first", "last", "largest", "only"]
 Kind = Literal["auto", "any", "object", "array"]
 Form = Literal["NFC", "NFD", "NFKC", "NFKD"]
 Policy = Literal["default", "strict", "secrets", "pii", "none"]
+CitationKind = Literal["numeric", "footnote", "url"]
 JSONValue = Union[None, bool, int, float, str, list, dict]
+
+_ALL_CITATION_KINDS: tuple[CitationKind, ...] = ("numeric", "footnote", "url")
 
 
 def _require_str(value: object, name: str) -> None:
@@ -500,3 +506,50 @@ def detect_pii(
     """
     _require_str(text, "text")
     return _native.detect_pii(text, *_redact_args(policy, exclude, patterns, terms))  # type: ignore[return-value]
+
+
+# ---------------------------------------------------------------- citations
+
+
+class Citation(TypedDict):
+    kind: str
+    ref: str
+    start: int
+    end: int
+    text: str
+
+
+def extract_citations(
+    text: str,
+    *,
+    kinds: Iterable[CitationKind] = _ALL_CITATION_KINDS,
+) -> list[Citation]:
+    """Find citation markers in model output, without changing the text.
+
+    Deterministic and provider-agnostic (plain text in, spans out). Recognizes
+    three kinds:
+
+    * ``"numeric"`` — bracketed numeric markers ``[1]``, ``[1, 2]``, ``[1-3]``
+      (``ref`` is the bracket contents, ``text`` the whole ``[...]``);
+    * ``"footnote"`` — Markdown footnote references ``[^id]`` (``ref`` is the id);
+    * ``"url"`` — inline ``http``/``https`` URLs (``ref`` equals ``text``, with
+      trailing sentence punctuation trimmed).
+
+    Returns ``{"kind", "ref", "start", "end", "text"}`` dicts ordered by
+    position; offsets are code points (``text[start:end]`` is the match).
+    Overlapping matches are resolved like :func:`detect_pii` (a ``[1]`` inside a
+    URL is dropped in favour of the URL).
+
+    Args:
+        text: The model output to scan.
+        kinds: Which kinds to extract; defaults to all three.
+
+    >>> extract_citations("See [1] and [2, 3].")[0]["ref"]
+    '1'
+    >>> [c["kind"] for c in extract_citations("ref https://x.io and [^a]")]
+    ['url', 'footnote']
+    """
+    _require_str(text, "text")
+    if isinstance(kinds, str):
+        raise TypeError("kinds must be an iterable of kind names, not a str")
+    return _native.extract_citations(text, [str(k) for k in kinds])  # type: ignore[return-value]
