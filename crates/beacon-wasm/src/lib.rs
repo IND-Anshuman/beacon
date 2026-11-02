@@ -13,8 +13,11 @@ use beacon_core::error::{BlockError, ErrorKind};
 use beacon_core::extract_json::{self, Kind, Select};
 use beacon_core::hash::hash_value;
 use beacon_core::json::parse_document;
+use beacon_core::citations;
+use beacon_core::injection;
 use beacon_core::normalize::{self, Form, Options};
 use beacon_core::parse_tool_call;
+use beacon_core::partial;
 use beacon_core::redact::{self, Spec};
 use beacon_core::retry::{self, Policy};
 use beacon_core::template::{self, Escape};
@@ -144,6 +147,10 @@ fn handle(text: &str) -> String {
     let op = arg_str(&req, "op", "");
     let result = match op {
         "extract_json" => op_extract(&req),
+        "parse_partial" => op_partial(&req),
+        "extract_citations" => op_citations(&req),
+        "detect_injection" => op_injection(&req),
+        "scan_arguments" => op_scan_arguments(&req),
         "parse_tool_calls" => op_tool_calls(&req),
         "validate_schema" => op_validate(&req),
         "template" => op_template(&req),
@@ -171,6 +178,67 @@ fn op_extract(req: &Value) -> Result<Value, BlockError> {
         ("source", s(e.source.as_str())),
         ("candidates", Value::Int(e.candidates as i64)),
     ]))
+}
+
+fn op_partial(req: &Value) -> Result<Value, BlockError> {
+    let out = partial::parse_partial(arg_str(req, "text", ""));
+    Ok(obj(vec![
+        ("value", out.value),
+        ("complete", Value::Bool(out.complete)),
+        ("consumed", Value::Int(out.consumed as i64)),
+    ]))
+}
+
+fn op_citations(req: &Value) -> Result<Value, BlockError> {
+    let text = arg_str(req, "text", "");
+    let kinds: Vec<String> = match req.get("kinds") {
+        Some(Value::Array(items)) => items.iter().filter_map(|v| v.as_str().map(str::to_string)).collect(),
+        _ => citations::ALL_KINDS.iter().map(|k| k.to_string()).collect(),
+    };
+    let kind_refs: Vec<&str> = kinds.iter().map(String::as_str).collect();
+    let cits = citations::extract(text, &kind_refs)?;
+    Ok(Value::Array(
+        cits.into_iter()
+            .map(|c| {
+                obj(vec![
+                    ("kind", s(c.kind)),
+                    ("ref", s(&c.reference)),
+                    ("start", Value::Int(c.start as i64)),
+                    ("end", Value::Int(c.end as i64)),
+                    ("text", s(&c.text)),
+                ])
+            })
+            .collect(),
+    ))
+}
+
+fn findings_to_value(findings: Vec<injection::Finding>) -> Value {
+    Value::Array(
+        findings
+            .into_iter()
+            .map(|f| {
+                obj(vec![
+                    ("label", s(f.label)),
+                    ("severity", s(f.severity)),
+                    ("start", Value::Int(f.start as i64)),
+                    ("end", Value::Int(f.end as i64)),
+                    ("text", s(&f.text)),
+                    ("path", s(&f.path)),
+                ])
+            })
+            .collect(),
+    )
+}
+
+fn op_injection(req: &Value) -> Result<Value, BlockError> {
+    let findings = injection::detect(arg_str(req, "text", ""), arg_str(req, "policy", "default"))?;
+    Ok(findings_to_value(findings))
+}
+
+fn op_scan_arguments(req: &Value) -> Result<Value, BlockError> {
+    let args = arg_json(req, "arguments", Value::Object(Vec::new()))?;
+    let findings = injection::scan_arguments(&args, arg_str(req, "policy", "default"))?;
+    Ok(findings_to_value(findings))
 }
 
 fn op_tool_calls(req: &Value) -> Result<Value, BlockError> {
