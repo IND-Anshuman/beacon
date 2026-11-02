@@ -16,6 +16,7 @@ pub fn unicode_version() -> (u8, u8, u8) {
     unicode_normalization::UNICODE_VERSION
 }
 
+pub mod citations;
 pub mod error;
 pub mod extract_json;
 pub mod hash;
