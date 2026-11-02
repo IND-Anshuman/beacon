@@ -1,0 +1,10 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_partial/complete_object
+input:
+  text: "{\"intent\": \"cancel\", \"confidence\": 0.9}"
+value:
+  value:
+    intent: cancel
+    confidence: 0.9
+  complete: true
+  consumed: 39

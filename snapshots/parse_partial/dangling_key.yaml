@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_partial/dangling_key
+input:
+  text: "{\"a\": 1, \"b\":"
+value:
+  value:
+    a: 1
+  complete: false
+  consumed: 13

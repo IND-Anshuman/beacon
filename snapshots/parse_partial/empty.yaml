@@ -1,0 +1,8 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_partial/empty
+input:
+  text: ""
+value:
+  value: null
+  complete: false
+  consumed: 0

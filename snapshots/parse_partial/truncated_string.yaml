@@ -1,0 +1,9 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_partial/truncated_string
+input:
+  text: "{\"message\": \"the answer is"
+value:
+  value:
+    message: the answer is
+  complete: false
+  consumed: 26

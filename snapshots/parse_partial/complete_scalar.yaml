@@ -1,0 +1,8 @@
+# beacon snapshot v1 — regenerate with: python -m beacon.snapshots update
+name: parse_partial/complete_scalar
+input:
+  text: "true"
+value:
+  value: true
+  complete: true
+  consumed: 4
