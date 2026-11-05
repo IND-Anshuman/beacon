@@ -302,10 +302,7 @@ mod tests {
     fn scan_arguments_reports_paths() {
         let args = Value::Object(vec![
             ("query".into(), Value::Str("1 OR 1=1".into())),
-            (
-                "opts".into(),
-                Value::Object(vec![("cmd".into(), Value::Str("$(rm -rf /)".into()))]),
-            ),
+            ("opts".into(), Value::Object(vec![("cmd".into(), Value::Str("$(rm -rf /)".into()))])),
             ("limit".into(), Value::Int(5)),
         ]);
         let f = scan_arguments(&args, "default").unwrap();

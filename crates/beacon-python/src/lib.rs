@@ -210,7 +210,11 @@ mod _beacon_native {
 
     #[pyfunction]
     #[pyo3(signature = (arguments, policy))]
-    fn scan_arguments<'py>(py: Python<'py>, arguments: &Bound<'_, PyAny>, policy: &str) -> PyResult<Bound<'py, PyList>> {
+    fn scan_arguments<'py>(
+        py: Python<'py>,
+        arguments: &Bound<'_, PyAny>,
+        policy: &str,
+    ) -> PyResult<Bound<'py, PyList>> {
         let value = py_to_value(arguments, "", 0)?;
         let findings = beacon_core::injection::scan_arguments(&value, policy).map_err(|e| to_py_err(py, e))?;
         findings_to_py(py, &findings)

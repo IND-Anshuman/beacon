@@ -738,7 +738,11 @@ impl<'s> Validator<'s> {
             }
             match unevaluated {
                 Value::Bool(false) => {
-                    self.error(path, "unevaluatedProperties", format!("unevaluated property {} is not allowed", quote(key)));
+                    self.error(
+                        path,
+                        "unevaluatedProperties",
+                        format!("unevaluated property {} is not allowed", quote(key)),
+                    );
                 }
                 sub => self.validate(value, sub, &push_pointer(path, key), depth + 1)?,
             }
@@ -1020,10 +1024,7 @@ mod tests {
         assert!(errs(r#"{"name": "a"}"#, schema).is_empty());
         assert!(errs(r#"{"name": "a", "credit_card": "x", "billing_address": "y"}"#, schema).is_empty());
         let e = errs(r#"{"name": "a", "credit_card": "x"}"#, schema);
-        assert_eq!(
-            e,
-            vec![("".to_string(), "required", r#"missing required property "billing_address""#.to_string())]
-        );
+        assert_eq!(e, vec![("".to_string(), "required", r#"missing required property "billing_address""#.to_string())]);
     }
 
     #[test]

@@ -71,8 +71,18 @@ const URL: &str = "(?i)https?://[^\\s<>\\[\\]{}\"'|\\\\`]+";
 
 static DETECTORS: LazyLock<Result<Vec<Detector>, String>> = LazyLock::new(|| {
     Ok(vec![
-        Detector { kind: "numeric", regex: Regex::new(NUMERIC).map_err(|e| e.to_string())?, ref_group: 1, trim_url: false },
-        Detector { kind: "footnote", regex: Regex::new(FOOTNOTE).map_err(|e| e.to_string())?, ref_group: 1, trim_url: false },
+        Detector {
+            kind: "numeric",
+            regex: Regex::new(NUMERIC).map_err(|e| e.to_string())?,
+            ref_group: 1,
+            trim_url: false,
+        },
+        Detector {
+            kind: "footnote",
+            regex: Regex::new(FOOTNOTE).map_err(|e| e.to_string())?,
+            ref_group: 1,
+            trim_url: false,
+        },
         Detector { kind: "url", regex: Regex::new(URL).map_err(|e| e.to_string())?, ref_group: 0, trim_url: true },
     ])
 });
@@ -173,10 +183,7 @@ mod tests {
     fn numeric_markers() {
         let c = all("See [1] and [2, 3] and the range [4-6].");
         let refs: Vec<_> = c.iter().map(|x| (x.kind, x.reference.as_str(), x.text.as_str())).collect();
-        assert_eq!(
-            refs,
-            vec![("numeric", "1", "[1]"), ("numeric", "2, 3", "[2, 3]"), ("numeric", "4-6", "[4-6]")]
-        );
+        assert_eq!(refs, vec![("numeric", "1", "[1]"), ("numeric", "2, 3", "[2, 3]"), ("numeric", "4-6", "[4-6]")]);
     }
 
     #[test]

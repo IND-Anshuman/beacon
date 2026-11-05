@@ -57,8 +57,7 @@ pub fn repair(text: &str) -> Result<Repaired, BlockError> {
         let at = TextPos::from_byte(text, text.len()).offset;
         let mut detail = String::from("input ended before the JSON value was complete");
         if !r.closed.is_empty() {
-            let brackets: String =
-                r.closed.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(" ");
+            let brackets: String = r.closed.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(" ");
             let n = r.closed.len();
             let word = if n == 1 { "container" } else { "containers" };
             detail.push_str(&format!("; closed {n} unterminated {word}: {brackets}"));
@@ -613,7 +612,10 @@ mod tests {
 
     #[test]
     fn nan_and_infinity_become_null() {
-        assert_eq!(rep(r#"{"a": NaN, "b": Infinity, "c": -Infinity}"#).value.to_json(), r#"{"a": null, "b": null, "c": null}"#);
+        assert_eq!(
+            rep(r#"{"a": NaN, "b": Infinity, "c": -Infinity}"#).value.to_json(),
+            r#"{"a": null, "b": null, "c": null}"#
+        );
         assert_eq!(kinds(r#"[NaN, Infinity, -Infinity]"#), vec!["nan_infinity", "nan_infinity", "nan_infinity"]);
     }
 
