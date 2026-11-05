@@ -39,6 +39,27 @@ Check it works:
 {'ok': True}
 ```
 
+## JavaScript / TypeScript
+
+The same core ships to npm as **`llm-beacon`**, compiled to WebAssembly with idiomatic TypeScript types. It runs in Node (ESM) and the browser, and produces **byte-identical** output to the Python package.
+
+```bash
+npm install llm-beacon
+```
+
+```js
+import { init, extractJson, parsePartial } from 'llm-beacon';
+
+await init(); // load the wasm once
+
+extractJson('The user wants this: {"intent": "cancel"}');
+// => { intent: 'cancel' }
+parsePartial('{"intent": "canc').value;
+// => { intent: 'canc' }
+```
+
+Errors are thrown as `Error` objects whose `code` property is beacon's stable error code.
+
 ## Requirements
 
 | | Supported |
