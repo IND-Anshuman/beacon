@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>beacon browser smoke</title>
+  </head>
+  <body>
+    <pre id="out">running…</pre>
+    <script type="module">
+      import * as beacon from '../pkg/index.mjs';
+      const out = document.getElementById('out');
+      try {
+        await beacon.init(); // browser: fetches the bundled .wasm
+        const checks = {
+          extract: JSON.stringify(beacon.extractJson('x {"a":1} y')) === '{"a":1}',
+          repair: beacon.repairJson('{"a":1,}').value.a === 1,
+          partial: beacon.parsePartial('{"a":').complete === false,
+          toolcall: beacon.parseToolCall('f(x=1)').arguments.x === 1,
+          normalize: beacon.normalize('a   b') === 'a b',
+          hash: beacon.hashContent({ a: 1, b: 2 }) === beacon.hashContent({ b: 2, a: 1 }),
+          citations: beacon.extractCitations('see [1]')[0].ref === '1',
+          injection: beacon.detectInjection('1 OR 1=1')[0].label === 'sql_injection',
+        };
+        const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([k]) => k);
+        out.textContent = failed.length === 0 ? `BROWSER_SMOKE_OK ${Object.keys(checks).length}` : `FAIL ${failed.join(',')}`;
+      } catch (e) {
+        out.textContent = `ERROR ${e && e.message ? e.message : e}`;
+      }
+    </script>
+  </body>
+</html>
