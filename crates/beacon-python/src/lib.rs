@@ -148,6 +148,14 @@ mod _beacon_native {
         Ok(d)
     }
 
+    /// Internal: canonical JSON text of a value, using the same serializer the
+    /// wasm bindings use. Exposed for the cross-language parity tests; not part
+    /// of the public `beacon` API.
+    #[pyfunction]
+    fn to_canonical_json(value: &Bound<'_, PyAny>) -> PyResult<String> {
+        Ok(py_to_value(value, "", 0)?.to_json())
+    }
+
     #[pyfunction]
     fn parse_partial<'py>(py: Python<'py>, text: &str) -> PyResult<Bound<'py, PyDict>> {
         let out = beacon_core::partial::parse_partial(text);
