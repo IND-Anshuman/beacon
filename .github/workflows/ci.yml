@@ -84,6 +84,47 @@ jobs:
           python -m pip install dist/*.whl
           python -X utf8 -m pytest -p no:cacheprovider
 
+  js:
+    name: JS/WASM build + cross-language parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            .
+            crates/beacon-js
+      # Prebuilt wasm-bindgen CLI; version MUST match the `wasm-bindgen` crate
+      # pinned in crates/beacon-js/Cargo.toml (=0.2.130).
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli@0.2.130
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clippy (beacon-js, wasm target)
+        run: cargo clippy --target wasm32-unknown-unknown --all-targets -- -D warnings
+        working-directory: crates/beacon-js
+      - name: Build the npm package (wasm + bindings)
+        run: node crates/beacon-js/build.mjs
+      - name: Node ESM smoke test
+        run: node crates/beacon-js/test/smoke.mjs
+      - name: Build and install the wheel (for the parity corpus)
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip maturin pytest
+          maturin build --release --out dist
+          python -m pip install dist/*.whl
+      - name: Cross-language parity (byte-identical Python vs JavaScript)
+        run: python -m pytest -p no:cacheprovider tests/test_parity_js.py
+
   integrations:
     name: Framework integrations
     runs-on: ubuntu-latest
