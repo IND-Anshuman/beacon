@@ -1,0 +1,43 @@
+---
+title: detect_injection
+description: Deterministic flag-only heuristics for SQL injection, shell metacharacters, path traversal and prompt-injection phrases.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`detect_injection` flags text — and `scan_arguments` flags tool-call arguments — that *look like* an injection attempt. Both are deterministic: same input, same flags, on every machine, with no model call, no ML and no network.
+
+<Aside type="caution" title="Not a security guarantee">
+This is a **flag-only heuristic, not a security control.** Expect false positives (ordinary prose contains `|`, `..` and the word "ignore") and false negatives (any fixed ruleset can be evaded). It flags; the caller decides. Do not use it as a sanitizer or an allow/deny gate on its own.
+</Aside>
+
+```python
+detect_injection(text, *, policy="default") -> list[dict]
+scan_arguments(arguments, *, policy="default") -> list[dict]
+# each finding: {"label", "severity", "start", "end", "text", "path"}
+```
+
+```python
+>>> [f["label"] for f in detect_injection("id = 1 OR 1=1; DROP TABLE users")]
+['sql_injection', 'sql_injection']
+>>> scan_arguments({"q": "x'; DROP TABLE t", "opts": {"cmd": "$(rm -rf /)"}})
+[{'label': 'sql_injection', ..., 'path': '/q'},
+ {'label': 'shell_metacharacters', ..., 'path': '/opts/cmd'}]
+```
+
+## Labels
+
+| label | severity | matches |
+| --- | --- | --- |
+| `sql_injection` | high | `UNION SELECT`, `OR 1=1`, `'…'='…'` tautologies, `; DROP`/`DELETE`/…, `DROP TABLE` |
+| `path_traversal` | high | `../`, `..\`, `..%2f`/`..%5c` runs |
+| `shell_metacharacters` | medium | `$(…)`, `rm -rf`, `;`/`&&`/`\|\|` chained into a known command |
+| `prompt_injection` | medium | common phrases such as "ignore previous instructions", "reveal your system prompt" |
+
+`policy` is `"default"` (all labels) or `"none"`. Each finding carries a stable `severity`; offsets are **code points**.
+
+## Over text vs. over arguments
+
+`detect_injection` scans one string and leaves `path` empty. `scan_arguments` walks every string value of `arguments` (a parsed tool call's args) and sets `path` to a JSON Pointer to the offending string, with offsets into that string. Overlapping matches are merged as in `detect_pii`.
+
+Available in `beacon`, `beacon.aio` and the JavaScript package (`detectInjection`, `scanArguments`).

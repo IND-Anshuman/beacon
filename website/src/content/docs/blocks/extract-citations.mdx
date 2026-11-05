@@ -1,0 +1,40 @@
+---
+title: extract_citations
+description: Find numeric markers, footnote references and inline URLs in model output as ordered spans.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`extract_citations` finds the citation markers models emit in prose and returns each as a span — deterministically, without changing the text. It mirrors the shape and mechanics of `detect_pii`.
+
+```python
+extract_citations(text, *, kinds=("numeric", "footnote", "url"))
+    -> list[dict]   # {"kind", "ref", "start", "end", "text"}
+```
+
+```python
+>>> extract_citations("The study [1] and others [2, 3] agree; see https://example.com/x.")
+[{'kind': 'numeric', 'ref': '1', 'start': 10, 'end': 13, 'text': '[1]'},
+ {'kind': 'numeric', 'ref': '2, 3', 'start': 25, 'end': 31, 'text': '[2, 3]'},
+ {'kind': 'url', 'ref': 'https://example.com/x', 'start': 42, 'end': 63, 'text': 'https://example.com/x'}]
+```
+
+## Kinds
+
+| kind | matches | `ref` |
+| --- | --- | --- |
+| `numeric` | `[1]`, `[1, 2]`, `[1-3]` | the bracket contents, trimmed |
+| `footnote` | Markdown `[^id]` | the id |
+| `url` | inline `http`/`https` URLs | the URL (trailing sentence punctuation trimmed) |
+
+`kinds` selects which to extract (all three by default). Offsets are **code points**, so `text[start:end]` is the match, and results are ordered by position.
+
+## Overlaps
+
+Matches are sorted by start, then longer first, then kind order, and a match is kept only if it doesn't overlap one already kept — so a `[1]` inside a URL is dropped in favour of the URL.
+
+<Aside type="note">
+This is provider-agnostic: plain text in, spans out. A helper for a provider's **structured** citation blocks (for example Anthropic's `citations` field) belongs in that integration, not in the core block.
+</Aside>
+
+Available in `beacon`, `beacon.aio` and the JavaScript package (`extractCitations`).

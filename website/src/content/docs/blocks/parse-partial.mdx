@@ -1,0 +1,45 @@
+---
+title: parse_partial
+description: Parse an incomplete JSON prefix as it streams into the best value so far, deterministically.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`parse_partial` is the streaming counterpart to `repair_json`. While a response is still arriving, it parses the incomplete prefix you hold into the best value so far and tells you whether it is a whole value yet. It is strict JSON tolerant of exactly one thing — **truncation** — and, unlike `repair_json`, it makes no other fix-ups and keeps no log. For near-JSON use `repair_json`; for JSON embedded in prose call `extract_json` first.
+
+```python
+parse_partial(text) -> PartialResult   # .value, .complete, .consumed
+```
+
+```python
+>>> r = parse_partial('{"intent": "canc')
+>>> r.value
+{'intent': 'canc'}
+>>> r.complete
+False
+>>> parse_partial('{"ok": true}').complete
+True
+```
+
+## What it does with a truncated prefix
+
+- Open objects and arrays are closed.
+- An unterminated string is closed at the text's end.
+- A dangling object key with no value is dropped.
+- An unfinished trailing number or literal (`2.`, `tr`) is left out.
+
+It **never raises** on content (only `TypeError` on a non-`str`): text that is not JSON yet yields `value=None` with `complete=False`.
+
+## Fields
+
+| Field | Meaning |
+| --- | --- |
+| `value` | The structure parsed so far, with truncated containers and strings closed. |
+| `complete` | `True` iff the whole input is one JSON value (ignoring trailing whitespace). |
+| `consumed` | How many code points were consumed into `value`. |
+
+<Aside type="note">
+`parse_partial` is **stateless**: feed each growing buffer in again from the start. Feeding successive prefixes of a serialized value yields partial values that converge to that value at the final prefix — the property the fuzz tests check.
+</Aside>
+
+Available in `beacon`, `beacon.aio`, the CLI (`beacon partial`) and the JavaScript package (`parsePartial`).
