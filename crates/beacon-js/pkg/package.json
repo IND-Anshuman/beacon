@@ -1,0 +1,50 @@
+{
+  "name": "llm-beacon",
+  "version": "0.3.0",
+  "description": "Deterministic, tested building blocks for AI pipelines — the WebAssembly/TypeScript build of beacon-core. Same input, same output, byte-identical to the Python package.",
+  "type": "module",
+  "main": "index.mjs",
+  "module": "index.mjs",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "node ../build.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.mjs",
+    "index.d.ts",
+    "beacon_js.js",
+    "beacon_js.d.ts",
+    "beacon_js_bg.wasm",
+    "beacon_js_bg.wasm.d.ts",
+    "README.md"
+  ],
+  "sideEffects": [
+    "./beacon_js.js"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "llm",
+    "determinism",
+    "json",
+    "json-schema",
+    "prompt",
+    "tool-calling",
+    "wasm",
+    "webassembly"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IND-Anshuman/beacon"
+  },
+  "homepage": "https://www.anshumanbuilds.dev/beacon/",
+  "engines": {
+    "node": ">=18"
+  }
+}
