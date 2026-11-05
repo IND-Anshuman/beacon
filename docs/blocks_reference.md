@@ -144,6 +144,35 @@ set to `True`, and the final `truncated` repair names the brackets it closed
 (`== bool(repairs)`), `incomplete`. `schema=` validates the repaired value with
 `validate_schema`.
 
+## parse_partial
+
+```python
+parse_partial(text) -> PartialResult
+```
+
+Streaming's counterpart to `repair_json`: parse an **incomplete JSON prefix** —
+the text held while a response is still arriving — into the best value so far,
+and report whether it is a whole value yet. It is strict JSON (no fix-ups, no
+log) tolerant of exactly one thing: **truncation**. Open containers and strings
+are closed, a dangling object key with no value is dropped, and an unfinished
+trailing number or literal is left out. For near-JSON use `repair_json`; for
+JSON embedded in prose call `extract_json` first.
+
+It never raises (except `TypeError` on a non-`str`): text that is not JSON yet
+yields `value=None` with `complete=False`. It is **stateless** — feed each
+growing buffer in again from the start, and successive prefixes of a value
+converge to that value at the final prefix.
+
+`PartialResult` fields: `value` (the structure parsed so far, closed),
+`complete` (`True` iff the whole input is one JSON value, ignoring trailing
+whitespace), `consumed` (code points consumed into `value`).
+
+```python
+>>> r = parse_partial('{"intent": "canc')
+>>> r.value, r.complete
+({'intent': 'canc'}, False)
+```
+
 ## parse_tool_call
 
 ```python
@@ -317,6 +346,57 @@ Policies: `default` = all except `ipv4`/`ipv6`; `strict` = all; `secrets` =
 priority (the table order above, then `patterns` in the order given, then
 `terms`). A match is kept only if it doesn't overlap one already kept.
 
+## extract_citations
+
+```python
+extract_citations(text, *, kinds=("numeric", "footnote", "url"))
+    -> list[{"kind", "ref", "start", "end", "text"}]
+```
+
+Finds citation markers in model output, deterministically and without changing
+the text (offsets are code points; `text[start:end]` is the match). Mirrors
+`detect_pii`'s shape and mechanics.
+
+| kind | matches | `ref` |
+| --- | --- | --- |
+| `numeric` | `[1]`, `[1, 2]`, `[1-3]` | the bracket contents, trimmed |
+| `footnote` | Markdown `[^id]` | the id |
+| `url` | inline `http`/`https` URLs | the URL (trailing sentence punctuation trimmed) |
+
+`kinds` selects which to extract (default all three). Overlaps are resolved like
+`detect_pii` — sorted by start, then longer first, then kind order — so a `[1]`
+inside a URL is dropped in favour of the URL. Provider-agnostic (plain text in,
+spans out); a helper for a provider's structured citation blocks belongs in that
+integration, not here.
+
+## detect_injection / scan_arguments
+
+```python
+detect_injection(text, *, policy="default")
+    -> list[{"label", "severity", "start", "end", "text", "path"}]
+scan_arguments(arguments, *, policy="default") -> list[...]   # same shape
+```
+
+Flags text — and tool-call arguments — that *look like* an injection attempt.
+**This is a deterministic flag-only heuristic, not a security guarantee**: no
+ML, no network. Expect false positives (ordinary prose contains `|`, `..` and
+the word "ignore") and false negatives (any fixed ruleset can be evaded). It
+flags; the caller decides. Do not use it as a sanitizer or an allow/deny gate on
+its own.
+
+| label | severity | matches |
+| --- | --- | --- |
+| `sql_injection` | high | `UNION SELECT`, `OR 1=1`, `'…'='…'` tautologies, `; DROP`/`DELETE`/…, `DROP TABLE` |
+| `path_traversal` | high | `../`, `..\`, `..%2f`/`..%5c` runs |
+| `shell_metacharacters` | medium | `$(…)`, `rm -rf`, `;`/`&&`/`\|\|` chained into a known command |
+| `prompt_injection` | medium | common phrases: "ignore previous instructions", "reveal your system prompt", … |
+
+`policy` is `"default"` (all labels) or `"none"`. Each finding carries a stable
+`severity`; offsets are code points. `detect_injection` leaves `path` empty;
+`scan_arguments` walks every string value of `arguments` (a parsed tool call's
+args) and sets `path` to a JSON Pointer to that string, with offsets into it.
+Overlapping matches are merged as in `detect_pii`.
+
 ## retry
 
 ```python
@@ -384,7 +464,8 @@ data = await aio.extract_json(text, schema=schema)
 
 `beacon.aio` mirrors every block in the core with an `await`-able coroutine of
 the same name and signature (`aio.extract_json`, `aio.repair_json`,
-`aio.validate_schema`, `aio.redact`, …). Each runs its synchronous counterpart
+`aio.parse_partial`, `aio.validate_schema`, `aio.redact`,
+`aio.extract_citations`, `aio.detect_injection`, …). Each runs its synchronous counterpart
 on a worker thread via `asyncio.to_thread`, so the event loop keeps serving
 other tasks while beacon works and no caller needs `run_in_executor`. Results,
 errors and determinism are identical to the sync API. In synchronous code, call
@@ -435,5 +516,7 @@ Codes are stable (see the compatibility rules in
 | `openai.no_content`, `openai.unknown_tool` | OpenAI integration | `MalformedOutputError` |
 
 Invalid arguments (`select`, `kind`, `escape`, `form`, `policy`, `length`,
-`RetryPolicy` fields, custom labels and patterns) raise `ValueError`, and
-unsupported value types raise `TypeError`.
+`RetryPolicy` fields, custom labels and patterns, citation `kinds`
+(`citations.invalid_kind`), injection `policy` (`injection.invalid_policy`))
+raise `ValueError`, and unsupported value types raise `TypeError`.
+`parse_partial` never raises on content — it closes a truncated prefix instead.
