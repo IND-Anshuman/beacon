@@ -6,7 +6,7 @@ members = ["crates/beacon-core", "crates/beacon-python"]
 # the workspace root, so a shared profile would either bloat the Python wheel or
 # de-tune the playground wasm. It is excluded to preserve both; it still
 # path-depends on beacon-core.
-exclude = ["crates/beacon-wasm"]
+exclude = ["crates/beacon-wasm", "crates/beacon-js"]
 
 [workspace.package]
 version = "0.3.0"

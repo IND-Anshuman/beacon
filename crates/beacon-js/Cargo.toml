@@ -1,0 +1,25 @@
+[package]
+name = "beacon-js"
+version = "0.1.0"
+edition = "2024"
+description = "WebAssembly/TypeScript bindings to beacon's Rust core, published to npm"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# The pure-Rust core only: no PyO3.
+beacon-core = { path = "../beacon-core" }
+wasm-bindgen = "=0.2.130"
+js-sys = "0.3.77"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+# `strip` is intentionally off: it removes the `target_features` custom section
+# that wasm-bindgen reads. Size is reduced by `opt-level = "z"`; run `wasm-opt`
+# in the build if a smaller artifact is needed.
