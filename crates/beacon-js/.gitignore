@@ -1,0 +1,9 @@
+target/
+# wasm-bindgen-generated artifacts (produced by `node build.mjs`); the
+# hand-written package files in pkg/ (index.mjs, index.d.ts, package.json,
+# README.md) are tracked.
+pkg/beacon_js.js
+pkg/beacon_js.d.ts
+pkg/beacon_js_bg.wasm
+pkg/beacon_js_bg.wasm.d.ts
+pkg/.gitignore
