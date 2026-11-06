@@ -1,6 +1,6 @@
 {
   "name": "llm-beacon",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Deterministic, tested building blocks for AI pipelines — the WebAssembly/TypeScript build of beacon-core. Same input, same output, byte-identical to the Python package.",
   "type": "module",
   "main": "index.mjs",

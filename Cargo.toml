@@ -9,7 +9,7 @@ members = ["crates/beacon-core", "crates/beacon-python"]
 exclude = ["crates/beacon-wasm", "crates/beacon-js"]
 
 [workspace.package]
-version = "0.3.0"
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
