@@ -7,6 +7,25 @@ beacon follows semantic versioning, plus the extra rules in the [determinism con
 
 The canonical changelog is [`CHANGELOG.md`](https://github.com/IND-Anshuman/beacon/blob/main/CHANGELOG.md) in the repository; releases are tagged on [GitHub](https://github.com/IND-Anshuman/beacon/releases).
 
+## 1.1.0 · unreleased
+
+The Adoption & Launch phase — more framework adapters, problem-shaped docs and a published benchmark. Purely additive: no existing block output, error code or message changed.
+
+### Added
+
+- **Eight framework integrations** — thin, duck-typed adapters (no hard dependency on the framework): OpenAI Agents SDK, smolagents, Haystack, Strands Agents, AutoGen, CrewAI, Agno and Semantic Kernel. Each normalizes tool calls to `{"name", "arguments"}` and/or validates output, with provider-prefixed error codes and a `pip install "llm-beacon[...]"` extra.
+- **Vercel AI SDK adapter** (`llm-beacon/vercel`) — a duck-typed TypeScript adapter on the npm package (`validatedToolCalls`, `parseOutput`, `toolSchemas`) with the same behaviour as the Python adapters.
+- **[Recipes](../../recipes/overview/)** — a symptom-organized docs section, each page ending in what the block does *not* do.
+- **[Overhead](../../guarantees/overhead/)** — a benchmark page with the measured per-call cost of every block.
+
+### Pinned data versions
+
+| Data | Version |
+| --- | --- |
+| Unicode tables | 18.0.0 (`beacon.UNICODE_VERSION`) |
+| Canonical hash encoding | v1 |
+| Snapshot file format | v1 |
+
 ## 1.0.0 · unreleased
 
 v1.0 takes the core cross-language. The pure-Rust blocks are now a standalone, publishable crate, and the same code ships to JavaScript/TypeScript via WebAssembly — proven byte-identical to the Python package by a shared corpus. No existing block output, error code or message changed.

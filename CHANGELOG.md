@@ -8,6 +8,39 @@ releases never change block output, including error messages.
 Each release lists **Behaviour changes** separately. Those are any
 input whose output differs from the previous release.
 
+## [1.1.0] - unreleased
+
+The Adoption & Launch phase: more framework adapters, problem-shaped docs and a
+published benchmark. Purely additive — no existing block output, error code or
+message changed.
+
+### Added
+
+- **Eight framework integrations** — thin, duck-typed adapters (no hard
+  dependency on the framework) following the existing convention: OpenAI Agents
+  SDK, smolagents, Haystack, Strands Agents, AutoGen, CrewAI, Agno and Semantic
+  Kernel. Each normalizes tool calls to `{"name", "arguments"}` and/or validates
+  output, with provider-prefixed error codes, plus a `pip install
+  "llm-beacon[...]"` extra for each.
+- **Vercel AI SDK adapter** (`llm-beacon/vercel`) — a duck-typed TypeScript
+  adapter on the npm package: `validatedToolCalls`, `parseOutput` and
+  `toolSchemas`, with the same behaviour and error codes as the Python adapters.
+- **Recipes** — a symptom-organized documentation section (prose instead of
+  JSON, truncated output, unknown tool, PII, retry storms, injection in a tool
+  arg, and more), each page stating what the block does *not* do.
+- **Overhead benchmark** — a docs page with the measured per-call cost of every
+  block (microseconds), reproducible via `benches/determinism_overhead.py`.
+
+### Behaviour changes
+
+None. This release only adds adapters and documentation.
+
+### Pinned data versions
+
+- Unicode tables: 18.0.0 (`beacon.UNICODE_VERSION`).
+- Canonical hash encoding: v1.
+- Snapshot file format: v1.
+
 ## [1.0.0] - unreleased
 
 v1.0 takes the core cross-language. The pure-Rust blocks are now a standalone,
