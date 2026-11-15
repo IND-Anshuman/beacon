@@ -1,0 +1,34 @@
+---
+title: Two providers, different shapes
+description: OpenAI, Anthropic, Gemini and the agent frameworks each return tool calls and output in their own shape.
+---
+
+## Symptom
+
+You want to switch providers, or support more than one, but each returns a different structure: OpenAI puts tool calls in `message.tool_calls` with string arguments, Anthropic uses `tool_use` content blocks with parsed input, others emit the call as text. Your dispatch code is a tangle of `if provider == ...`.
+
+## Minimal fix
+
+Use the adapter for each provider; they all normalize to the **same** shape:
+
+```python
+from beacon.integrations import openai_sdk, anthropic_sdk
+
+openai_sdk.validated_tool_call(openai_response)     # [{'name': ..., 'arguments': {...}}]
+anthropic_sdk.validated_tool_call(anthropic_response)  # identical shape
+```
+
+The same holds for the agent frameworks — `autogen`, `crewai`, `smolagents`, `strands`, `agno`, `semantic_kernel`, `openai_agents` — and for output parsing via `parse_output` / `validated_output`.
+
+## What it guarantees
+
+- Every adapter returns tool calls as `{"name": str, "arguments": dict}` and validated output through the same `parse_structured` path.
+- Adapters are **duck-typed** — no hard dependency on the provider SDK, so real objects, dicts and test fakes all work.
+- Unknown-tool and schema errors carry a provider-prefixed code, so your error handling is uniform across providers.
+
+## What it does not do
+
+- It does **not** wrap or replace the provider SDK — you still make the call; beacon normalizes the result at the boundary.
+- It does **not** translate *semantics* between providers (system-prompt quirks, token limits) — only the output and tool-call shapes.
+
+See [Integrations](../../integrations/overview/).

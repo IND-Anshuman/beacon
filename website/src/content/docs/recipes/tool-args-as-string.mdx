@@ -1,0 +1,43 @@
+---
+title: Tool args came back as a string
+description: The tool call's arguments are a JSON string, or the model emitted the whole call as text.
+---
+
+## Symptom
+
+Two shapes, same headache. Native tool calls hand you a **string** to parse:
+
+```python
+message.tool_calls[0].function.arguments
+# '{"city": "Paris", "days": 3}'   <- a str, not a dict
+```
+
+…and smaller models sometimes emit the call as plain text:
+
+```text
+<tool_call>{"name": "get_weather", "arguments": {"city": "Paris"}}</tool_call>
+```
+
+## Minimal fix
+
+```python
+import beacon
+
+call = beacon.parse_tool_call(
+    '<tool_call>{"name": "get_weather", "arguments": {"city": "Paris"}}</tool_call>'
+)
+# {'name': 'get_weather', 'arguments': {'city': 'Paris'}}
+```
+
+Using a framework? The [integrations](../../integrations/overview/) give you `validated_tool_call(response)` that reads native tool-call blocks *and* falls back to text, returning the same `{"name", "arguments"}` shape.
+
+## What it guarantees
+
+- Normalizes every variant to one shape: `{"name": str, "arguments": dict}`.
+- Parses the arguments **strictly** — a malformed argument object raises, it is not silently passed through as a string.
+- Identical shape across OpenAI, Anthropic, and the other adapters, so your dispatch code is provider-agnostic.
+
+## What it does not do
+
+- It does **not** execute the tool — it hands you a validated call to dispatch yourself.
+- It does **not** check the arguments against the tool's schema unless you ask; pass a schema, or see [Unknown tool](../unknown-tool/) to reject bad or hallucinated calls.

@@ -1,0 +1,37 @@
+---
+title: Useless schema error
+description: A validation failure that doesn't tell you which field was wrong or why.
+---
+
+## Symptom
+
+Your validator rejects the model's JSON but the message is noise — a wall of `anyOf` branches, or `data is not valid` with no path. You can't tell the model (or yourself) what to fix.
+
+## Minimal fix
+
+Get every error as a structured, located list:
+
+```python
+import beacon
+
+schema = {
+    "type": "object",
+    "properties": {"intent": {"type": "string"}, "confidence": {"type": "number"}},
+    "required": ["intent", "confidence"],
+}
+errors = beacon.schema_errors({"intent": "cancel"}, schema)
+# [{'path': '', 'message': 'missing required property "confidence"', ...}]
+```
+
+Use [`validate_schema`](../../blocks/validate-schema/) when you want it to raise instead, with the same located message.
+
+## What it guarantees
+
+- Each error carries a **JSON-pointer path** to the exact field and a stable, human-readable message.
+- Errors come back in a deterministic order, so the output is snapshot-testable and safe to show a model as feedback.
+- Same input → same errors, verbatim, everywhere.
+
+## What it does not do
+
+- It does **not** coerce or rewrite the data to fit the schema — it reports, you decide.
+- It is **not** a replacement for your type system (Pydantic, dataclasses); it validates the **shape** at the model boundary, before your types ever see the data.
