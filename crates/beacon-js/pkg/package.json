@@ -14,11 +14,17 @@
       "types": "./index.d.ts",
       "import": "./index.mjs"
     },
+    "./vercel": {
+      "types": "./vercel.d.ts",
+      "import": "./vercel.mjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "index.mjs",
     "index.d.ts",
+    "vercel.mjs",
+    "vercel.d.ts",
     "beacon_js.js",
     "beacon_js.d.ts",
     "beacon_js_bg.wasm",
