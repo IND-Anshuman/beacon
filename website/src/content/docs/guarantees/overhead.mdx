@@ -1,0 +1,55 @@
+---
+title: Overhead
+description: The measured per-call cost of every beacon block — microseconds, benchmarked and reproducible.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+beacon's blocks are implemented in Rust (via PyO3) and run on your machine, not over the network. The determinism contract costs you a fixed, tiny amount of CPU per call. This page is the measurement, not a claim: run the command and you get your own numbers.
+
+## The numbers
+
+Each block is timed on an LLM-sized input (a classification response with fenced JSON, a realistic prompt, a PII-laden support message). The figure is the per-call wall time, median of 7 repeats of 4000 calls each.
+
+| Block | Median | Best |
+| --- | --- | --- |
+| `template` | 1.2 µs | 1.1 µs |
+| `extract_json` | 2.6 µs | 2.5 µs |
+| `parse_tool_call` | 1.2 µs | 1.2 µs |
+| `validate_schema` | 9.6 µs | 9.1 µs |
+| `normalize` | 5.9 µs | 5.6 µs |
+| `hash_content` | 2.5 µs | 2.4 µs |
+| `redact` | 9.4 µs | 9.0 µs |
+| `retry.classify` | 2.4 µs | 2.1 µs |
+
+<Aside type="note" title="Measured on">
+beacon 1.0.0 · CPython 3.14.7 · Windows 11 · Intel Core Ultra 5 225H · release build (`opt-level = 3`). Absolute microseconds vary by machine and input; the order of magnitude does not.
+</Aside>
+
+## What this means
+
+The slowest block here is **under 10 microseconds**. A single model call is on the order of **hundreds of milliseconds** — four to five orders of magnitude larger. Validating every input and output a pipeline sends and receives adds well under a tenth of a millisecond: the determinism tax is lost in the noise next to the model it guards.
+
+The benchmark also asserts, before timing, that each block returns the **same** output across 50 repeat calls — the overhead and the determinism are measured together.
+
+## Reproduce it
+
+The benchmark lives in the repository and takes no arguments to run:
+
+```bash
+python benches/determinism_overhead.py
+```
+
+Tune the sample for a steadier median, and set a budget it must stay under (it exits non-zero if any block misses the budget, so it doubles as a CI guard):
+
+```bash
+python benches/determinism_overhead.py --number 4000 --repeat 7 --budget-ms 0.5
+```
+
+A release build matters: a debug build of the native module is several times slower and is not what ships. Build with `maturin develop --release` (or install the published wheel, which is release-optimized) before benchmarking.
+
+## What it does not measure
+
+- **Not throughput.** These are single-call latencies, not calls per second under load or across threads.
+- **Not the model.** beacon never calls a model; the network round-trip that dominates a real pipeline is not included here, by design.
+- **Not a pure-Python baseline.** The point is the absolute cost, which is already negligible — not a race against a hand-written Python equivalent you would then have to test for determinism yourself.
