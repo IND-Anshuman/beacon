@@ -1,0 +1,75 @@
+---
+title: beacon raised an error I don't understand
+description: Turn any beacon error code into its cause and fix, from Python or the command line.
+---
+
+## Symptom
+
+A beacon call raised something like `MalformedOutputError: ...` or you see a bare code such as `[json.not_found]` in a log, and you're not sure what it means or what to do next.
+
+## Minimal fix
+
+Every beacon exception carries a stable `.code` and an `.explain()` that spells out the cause, the fix, and any position/field context — deterministically, with no colour or clock:
+
+```python
+import beacon
+
+try:
+    beacon.extract_json("sorry, I can't do that")
+except beacon.BeaconError as exc:
+    print(exc.code)        # 'json.not_found'
+    print(exc.explain())   # cause + fix + context, as text
+    data = exc.details()   # the same, structured: {'code', 'message', ...}
+```
+
+Don't have an instance in hand — just a code from a log? Explain it directly:
+
+```python
+beacon.explain_code("crewai.unknown_tool")
+```
+
+From the shell:
+
+```bash
+beacon explain json.not_found
+```
+
+Or let any failing command print the long form on error, with `--explain`:
+
+```bash
+beacon --explain extract -t "no json here"
+```
+
+And for a bug report, `beacon doctor` prints the versions and the pinned data versions (Unicode, hash encoding, snapshot format):
+
+```bash
+beacon doctor
+```
+
+## The codes
+
+| Code (or family) | Means | Do |
+| --- | --- | --- |
+| `json.not_found` | No JSON object/array in the text | Check the model returned JSON; use [`repair_json`](../../blocks/parse-partial/) for near-JSON |
+| `json.*` (e.g. `json.unexpected_end`) | Strict JSON parse failed | [`repair_json`](../../blocks/parse-partial/) for breakage, [`parse_partial`](../../blocks/parse-partial/) for truncation |
+| `schema.validation_failed` | Valid JSON, wrong shape | Read `.errors` / [`schema_errors`](../../blocks/validate-schema/); fix the value or widen the schema |
+| `schema.invalid` | The schema itself is bad | Fix the schema (supported draft 2020-12 keywords only) |
+| `tool_call.not_found` | No tool call in the output | Check the model called a tool; `parse_tool_calls` lists all it finds |
+| `*.unknown_tool` | Model named a tool you didn't define | A hallucinated name — reject or re-prompt, never execute it |
+| `*.invalid_arguments` | Tool args failed the tool's schema | Read `.errors`; re-prompt or correct the arguments |
+| `template.missing_variable` | A placeholder had no value | Pass the names on `.names`, or `strict=False` |
+| `template.extra_variable` | Unused variables in strict mode | Drop them, or `strict=False` |
+| `template.syntax` | Malformed `{ }` in the template | `{{`/`}}` are literal braces; see `.position` |
+| `snapshot.mismatch` | Output differs from the stored snapshot | Review `.diff`; update snapshots deliberately |
+
+## What it guarantees
+
+- `.code` and the short message are a **stable contract** — they don't change in patch releases, so you can branch on the code and snapshot the message.
+- `.explain()`, `.details()`, `explain_code()` and `beacon explain` are **deterministic**: same error, same text, on every machine.
+- **No ambient logging.** beacon never writes to stdout or the root logger on its own — everything above is something you asked for. See the repair log and `Pipeline` hash traces for the same opt-in, structured diagnostics.
+
+## What it does not do
+
+- `.explain()` is **guidance, not a guarantee** — the short message and `.code` are the contract; the long-form text may improve between releases.
+- `beacon doctor` reports the **Python package**'s versions; it does not reach across to the JavaScript/other bindings (the cross-language parity corpus proves those match).
+- It does **not** change beacon's behaviour: an error that was raised is still raised. These tools only help you read it.

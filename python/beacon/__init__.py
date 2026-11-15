@@ -50,6 +50,7 @@ from .errors import (
     SnapshotMismatchError,
     TemplateError,
     TemplateSyntaxError,
+    explain_code,
 )
 from .retry import RetryAction, RetryDecision, RetryPolicy, RetryReason
 
@@ -114,6 +115,7 @@ __all__ = [
     "MissingVariableError",
     "ExtraVariableError",
     "SnapshotMismatchError",
+    "explain_code",
     "__version__",
     "UNICODE_VERSION",
 ]

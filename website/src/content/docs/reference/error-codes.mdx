@@ -5,6 +5,8 @@ description: Every stable error code beacon can raise, what triggers it, and whi
 
 Error codes are part of the [compatibility contract](../../guarantees/determinism/#4-stable-error-messages). They never change in a patch release. Branch on `err.code`, not on message text.
 
+For the cause and fix behind any code below, call `err.explain()` on the caught exception, `beacon.explain_code("json.not_found")` for a bare code, or `beacon explain <code>` from the shell. See the [recipe](../../recipes/error-i-dont-understand/).
+
 ## JSON (`extract_json`, and JSON inside tool calls)
 
 | Code | Trigger | Exception |

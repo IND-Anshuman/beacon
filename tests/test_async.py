@@ -57,12 +57,12 @@ def test_async_errors_propagate() -> None:
 
 
 def test_async_surface_covers_every_sync_block() -> None:
-    # Every data-processing block in beacon has an aio counterpart (retry and
-    # the result/error types are not blocks).
+    # Every data-processing block in beacon has an aio counterpart (retry, the
+    # result/error types, and the error-explanation helper are not blocks).
     sync_blocks = {
         name
         for name in beacon.__all__
-        if callable(getattr(beacon, name)) and name[0].islower() and name not in {"retry"}
+        if callable(getattr(beacon, name)) and name[0].islower() and name not in {"retry", "explain_code"}
     }
     assert sync_blocks <= set(aio.__all__), sync_blocks - set(aio.__all__)
 

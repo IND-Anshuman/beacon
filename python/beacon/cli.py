@@ -15,13 +15,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import sys
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
-from . import __version__
+from . import UNICODE_VERSION, __version__
 from ._api import extract_json, hash_content, parse_partial, parse_tool_calls, redact, repair_json, schema_errors
-from .errors import BeaconError
+from ._beacon_native import VERSION as _NATIVE_VERSION
+from .errors import BeaconError, explain_code
+
+# Pinned data versions — part of the compatibility contract (see
+# docs/determinism_guarantees.md and the CHANGELOG). Bumped only with a release.
+_HASH_ENCODING = "v1"
+_SNAPSHOT_FORMAT = "v1"
 
 EXIT_OK = 0
 EXIT_ERROR = 1
@@ -104,9 +111,37 @@ def _cmd_hash(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_doctor(args: argparse.Namespace) -> int:
+    native_ok = _NATIVE_VERSION == __version__
+    native_note = "" if native_ok else "   (MISMATCH with the beacon package — reinstall)"
+    lines = [
+        f"beacon              {__version__}",
+        f"native module       {_NATIVE_VERSION}{native_note}",
+        f"Python              {platform.python_version()} ({platform.python_implementation()})",
+        f"platform            {platform.platform()}",
+        "",
+        "pinned data versions (compatibility contract):",
+        f"  Unicode tables           {UNICODE_VERSION}",
+        f"  canonical hash encoding  {_HASH_ENCODING}",
+        f"  snapshot file format     {_SNAPSHOT_FORMAT}",
+    ]
+    print("\n".join(lines))
+    return EXIT_OK if native_ok else EXIT_ERROR
+
+
+def _cmd_explain(args: argparse.Namespace) -> int:
+    print(explain_code(args.code))
+    return EXIT_OK
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="beacon", description="Deterministic building blocks for AI pipelines.")
     parser.add_argument("--version", action="version", version=f"beacon {__version__}")
+    parser.add_argument(
+        "--explain",
+        action="store_true",
+        help="on a beacon error, also print the long-form explanation (cause, fix, context)",
+    )
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     def add_input(p: argparse.ArgumentParser) -> None:
@@ -155,6 +190,13 @@ def _build_parser() -> argparse.ArgumentParser:
     hash_.add_argument("--length", type=int, default=16, help="digest length in bytes (1-64)")
     hash_.set_defaults(func=_cmd_hash)
 
+    doctor = sub.add_parser("doctor", help="print beacon versions and environment (for bug reports)")
+    doctor.set_defaults(func=_cmd_doctor)
+
+    explain = sub.add_parser("explain", help="explain a beacon error code, e.g. 'beacon explain json.not_found'")
+    explain.add_argument("code", help="the error code, as shown in brackets in a beacon error / .code")
+    explain.set_defaults(func=_cmd_explain)
+
     return parser
 
 
@@ -166,6 +208,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return int(args.func(args))
     except BeaconError as exc:
         print(f"beacon: {exc}", file=sys.stderr)
+        if getattr(args, "explain", False):
+            print(exc.explain(), file=sys.stderr)
         return EXIT_ERROR
     except FileNotFoundError as exc:
         print(f"beacon: {exc.strerror}: {exc.filename}", file=sys.stderr)

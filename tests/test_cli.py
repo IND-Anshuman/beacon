@@ -100,3 +100,40 @@ def test_no_command_is_usage_error() -> None:
     with pytest.raises(SystemExit) as exc:
         main([])
     assert exc.value.code == 2
+
+
+def test_doctor_reports_versions(capsys: pytest.CaptureFixture[str]) -> None:
+    import beacon
+
+    assert main(["doctor"]) == 0
+    out = capsys.readouterr().out
+    assert beacon.__version__ in out
+    assert beacon.UNICODE_VERSION in out
+    assert "pinned data versions" in out
+    assert "snapshot file format" in out
+
+
+def test_explain_command(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["explain", "json.not_found"]) == 0
+    out = capsys.readouterr().out
+    assert "[json.not_found]" in out
+    assert "Cause:" in out and "Fix:" in out
+    assert "repair_json" in out
+
+
+def test_explain_unknown_code(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["explain", "no.such.code"]) == 0
+    assert "No specific guidance" in capsys.readouterr().out
+
+
+def test_global_explain_flag_prints_cause_and_fix(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--explain", "extract", "-t", "no json here"]) == 1
+    err = capsys.readouterr().err
+    assert "beacon:" in err  # the short message is still there
+    assert "Cause:" in err and "Fix:" in err  # plus the long form
+
+
+def test_no_explain_flag_keeps_output_terse(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["extract", "-t", "no json here"]) == 1
+    err = capsys.readouterr().err
+    assert "Cause:" not in err  # opt-in only

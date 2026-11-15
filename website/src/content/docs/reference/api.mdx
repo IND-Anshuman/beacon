@@ -130,6 +130,20 @@ main(argv=None) -> int                                             # python -m b
 
 All exceptions pickle with their attributes intact.
 
+Every exception also carries deterministic, opt-in diagnostics:
+
+```python
+exc.code         # stable error code, e.g. 'json.not_found' (compatibility contract)
+exc.explain()    # long-form text: cause, fix, and position/field context
+exc.details()    # the same as a JSON-friendly dict: {'code', 'message', ...non-None fields}
+
+beacon.explain_code("json.not_found")   # guidance for a bare code, no instance needed
+```
+
+`code` and the short `message` are stable; `explain()` text is guidance that may
+improve between releases. From the shell: `beacon explain <code>`,
+`beacon --explain <command> ...`, and `beacon doctor`.
+
 ## Module constants
 
 ```python
