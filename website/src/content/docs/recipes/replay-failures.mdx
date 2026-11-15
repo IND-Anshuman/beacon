@@ -1,0 +1,34 @@
+---
+title: Replay last week's failures
+description: You captured the model outputs that broke production and want to replay them against your fixed parser.
+---
+
+## Symptom
+
+Something broke in production. You saved the offending model responses. Now you want to prove your fix handles them — and keep proving it, so the same failure never returns.
+
+## Minimal fix
+
+Because the blocks are deterministic, the captured raw responses are a permanent corpus. Store each one as a snapshot and assert your pipeline's output over it:
+
+```python
+import beacon
+
+for raw in load_captured_responses():          # the exact bytes you saved
+    beacon.assert_snapshot(f"regressions/{raw['id']}", parse_pipeline(raw["text"]), input=raw["text"])
+```
+
+Run `pytest --beacon-snapshot check` in CI. A captured input that once failed is now a test that stays green forever — or goes red the moment a change would reintroduce the bug.
+
+## What it guarantees
+
+- The same captured input produces the **same** output on every machine and every future run, so a replay is a real regression test, not a flaky one.
+- The snapshot records input and output together, documenting precisely what "correct" means for that case.
+- `check` mode makes any regression a failed build.
+
+## What it does not do
+
+- It replays your **deterministic processing** of saved outputs; it does **not** re-call the model (that output is captured, not regenerated).
+- It does **not** generate the failing inputs for you — you supply the corpus from real incidents or fuzzing.
+
+See [Snapshot testing](../../snapshots/overview/) and [the CI guide](../../snapshots/ci/).

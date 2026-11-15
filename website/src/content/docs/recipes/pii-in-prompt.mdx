@@ -1,0 +1,37 @@
+---
+title: PII in the prompt
+description: You're about to send or log text that contains emails, phone numbers, cards, or secrets.
+---
+
+## Symptom
+
+A support message, a user record, or a tool result full of personal data is heading into a prompt — and into your logs and your model provider's servers.
+
+```text
+Hi, I'm Jane (jane.doe@example.com, +1 415-555-0132), card 4242 4242 4242 4242.
+```
+
+## Minimal fix
+
+```python
+import beacon
+
+safe = beacon.redact(
+    "Hi, I'm Jane (jane.doe@example.com, +1 415-555-0132), card 4242 4242 4242 4242."
+)
+# "Hi, I'm Jane ([REDACTED:email], [REDACTED:phone]), card [REDACTED:card]."
+```
+
+Pick a `policy` (`"default"`, `"strict"`, `"secrets"`, `"pii"`) and, for correlation without exposure, a `replacement` template with `{hash}` so the same value always maps to the same token.
+
+## What it guarantees
+
+- Deterministic placeholders from a **documented detector set** (emails, phones, SSNs, cards, API keys, AWS keys, JWTs, bearer tokens, private keys; `strict` adds IPs).
+- The same secret always redacts to the same token (with `{hash}`), so redacted logs stay joinable.
+- Same input → identical redacted output, everywhere.
+
+## What it does not do
+
+- It is **not** ML-based and will **not** catch PII it has no pattern for — a person's name in free prose, an account number in a novel format. It is a deterministic net, not a guarantee of total coverage; verify it against your data.
+- Redaction is **not** encryption or anonymization — removed text is gone, not recoverable, and re-identification from context is still your responsibility.
+- To **check** for leftover PII rather than remove it, see [Prove no PII left](../prove-no-pii/).

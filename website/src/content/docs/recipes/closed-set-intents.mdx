@@ -1,0 +1,38 @@
+---
+title: Closed-set intents
+description: The model should pick from a fixed set of labels, but sometimes returns a near-miss or a new one.
+---
+
+## Symptom
+
+Your classifier should return one of `cancel`, `refund`, `question` — but the model occasionally answers `cancellation`, `Cancel`, or invents `complaint`. Downstream code keyed on the exact label breaks.
+
+## Minimal fix
+
+Constrain the value with an `enum` schema and validate at the boundary:
+
+```python
+import beacon
+
+schema = {
+    "type": "object",
+    "properties": {"intent": {"type": "string", "enum": ["cancel", "refund", "question"]}},
+    "required": ["intent"],
+}
+data = beacon.extract_json(reply, schema=schema)   # raises if intent is off the set
+```
+
+A violation raises `SchemaValidationError` with the bad value located, so you can retry, fall back, or route to a human.
+
+## What it guarantees
+
+- Only a value **in the declared set** passes; `cancellation` and `complaint` are rejected deterministically, with the offending value attached.
+- The decision is identical on every machine and run — the same reply always passes or fails the same way.
+- Combined with [snapshots](../output-changed/), your label set becomes a tested contract.
+
+## What it does not do
+
+- It does **not** map near-misses onto the set for you (`cancellation` → `cancel`). Normalizing synonyms is a choice you make explicitly, not a silent guess.
+- It does **not** check case-insensitively unless your enum lists the variants — the match is exact by design.
+
+See [`validate_schema`](../../blocks/validate-schema/).

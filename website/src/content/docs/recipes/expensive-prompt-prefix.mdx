@@ -1,0 +1,37 @@
+---
+title: Expensive prompt prefix
+description: You re-send the same large prompt and want a stable key to cache the result against.
+---
+
+## Symptom
+
+The same system prompt plus context gets sent over and over. You want to cache the response, but you need a **stable, collision-resistant key** for "this exact input" — and `hash(str(...))` is neither stable across runs nor order-insensitive for dicts.
+
+## Minimal fix
+
+```python
+import beacon
+
+key = beacon.cache_key("system prompt v3", messages, {"temperature": 0})
+# a hex key; identical inputs -> identical key, on every run and machine
+```
+
+For hashing a single structured value (a request body, a schema), use `hash_content`:
+
+```python
+beacon.hash_content({"a": 1, "b": 2}) == beacon.hash_content({"b": 2, "a": 1})  # True
+```
+
+## What it guarantees
+
+- A **canonical** hash: object key order and insignificant formatting don't change the key, but any meaningful change does.
+- Deterministic across processes, machines and time (BLAKE3, versioned encoding) — unlike Python's salted `hash()`.
+- Distinct JSON types hash distinctly (`1`, `1.0`, `"1"`, `true` don't collide).
+
+## What it does not do
+
+- It is **not** a cache — it's the *key*. You bring the store (a dict, Redis, a file); beacon just gives you the stable identity.
+- It does **not** decide cache *validity* (TTLs, model-version busting) — include whatever should invalidate the entry as part of the key's inputs.
+- It is **not** a cryptographic commitment or signature; it's a content fingerprint.
+
+See [`hash_content`](../../blocks/hash-content/).

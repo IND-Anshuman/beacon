@@ -1,0 +1,37 @@
+---
+title: Output changed and I don't know why
+description: A prompt tweak or dependency bump silently changed what your pipeline produces.
+---
+
+## Symptom
+
+You changed a prompt, bumped a library, or refactored a parser — and something downstream is different now, but nothing failed. You can't tell what changed or whether it matters.
+
+## Minimal fix
+
+Pin the output of each deterministic step to a snapshot. The first run records it; later runs fail loudly on any drift:
+
+```python
+import beacon
+
+beacon.assert_snapshot(
+    "classify/cancel",
+    beacon.extract_json(reply),
+    input=reply,          # recorded alongside, so the file explains itself
+)
+```
+
+In tests, use the `snapshot` fixture and run `pytest --beacon-snapshot check` in CI (missing or changed snapshots fail).
+
+## What it guarantees
+
+- Because every beacon block is deterministic, a snapshot is a **stable contract**: a diff means *something you changed* altered the output, not nondeterminism.
+- The snapshot file stores the input and the output together, so a review shows exactly what moved.
+- `check` mode fails on any mismatch, turning silent drift into a red build.
+
+## What it does not do
+
+- It does **not** tell you whether the change is *good* — only that it happened. You review the diff and re-record on purpose.
+- It cannot stabilize **non-deterministic** inputs (a raw model call). Snapshot the output of beacon's blocks, not the model's text directly.
+
+See [Snapshot testing](../../snapshots/overview/).

@@ -1,0 +1,41 @@
+---
+title: Injection in a tool arg
+description: A model-produced tool argument contains SQL, shell metacharacters, path traversal, or a prompt-injection phrase.
+---
+
+## Symptom
+
+The model fills a tool argument with something that shouldn't be there — `1 OR 1=1`, `$(rm -rf /)`, `../../etc/passwd`, or `ignore previous instructions` — and you're about to pass it to a database, a shell, or another model.
+
+## Minimal fix
+
+Scan the whole arguments object before you act on it:
+
+```python
+import beacon
+
+findings = beacon.scan_arguments(
+    {"query": "1 OR 1=1", "path": "../../etc/passwd"},
+    policy="default",
+)
+# [{'label': 'sql_injection', 'path': '/query', ...},
+#  {'label': 'path_traversal', 'path': '/path', ...}]
+if findings:
+    ...  # block, log, or route to review
+```
+
+For a single string (a prompt, a message), use `detect_injection`.
+
+## What it guarantees
+
+- Deterministic, located flags for SQL injection, shell metacharacters, path traversal and prompt-injection phrases, each with a JSON-pointer `path` into the arguments.
+- Same input → same findings, so you can snapshot-test your guard and alert on changes.
+- Pure and offline — no model, no network.
+
+## What it does not do
+
+- It is **not a security guarantee.** It is a deterministic heuristic flag, not a sanitizer or a WAF; it will have false positives and false negatives.
+- It does **not** modify or escape the argument — use parameterized queries, `shlex.quote`, and real sandboxing. This is an early warning, not the fix.
+- It does **not** understand intent — treat a finding as "look here," not "this is an attack."
+
+See [`detect_injection`](../../blocks/detect-injection/).

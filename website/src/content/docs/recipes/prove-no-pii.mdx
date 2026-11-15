@@ -1,0 +1,34 @@
+---
+title: Prove no PII left
+description: You need to assert, in a test, that an output or a log line carries no detectable PII.
+---
+
+## Symptom
+
+You redact before logging, but you want a **test** that fails if PII ever slips through — a regression guard, not a one-time check.
+
+## Minimal fix
+
+`detect_pii` returns located findings without changing the text; assert the list is empty:
+
+```python
+import beacon
+
+findings = beacon.detect_pii(log_line, policy="strict")
+assert findings == [], f"PII leaked: {[f['label'] for f in findings]}"
+# each finding: {'label', 'start', 'end', 'text'}
+```
+
+Pair it with `redact` in production and `detect_pii` in tests over the same corpus.
+
+## What it guarantees
+
+- Reports every match of its **documented detector set**, each with a label and the exact `start`/`end` code-point span, in deterministic order.
+- Same input → same findings, so the assertion is stable and snapshot-testable.
+- Pure and offline — no network, no model, safe to run over sensitive fixtures.
+
+## What it does not do
+
+- An empty result means "**no detectable** PII," not "provably no PII." It is deterministic pattern matching, not ML; it cannot catch what it has no pattern for (names, novel identifier formats).
+- It does **not** redact — it only reports. To remove, see [PII in the prompt](../pii-in-prompt/).
+- Treat it as a **flag**, not a compliance guarantee; calibrate the policy and patterns to your own data.

@@ -1,0 +1,40 @@
+---
+title: Retry storm
+description: A 429 or overload turns into a tight retry loop that hammers the provider and burns budget.
+---
+
+## Symptom
+
+The provider returns `429 Too Many Requests` or `503`, and your `while True` retry loop fires again immediately — making the rate limit worse and ignoring the `Retry-After` header the provider sent.
+
+## Minimal fix
+
+Let beacon classify the error and hand you the backoff:
+
+```python
+from beacon import retry
+
+decision = retry.classify(error, attempt=2)
+decision.should_retry       # True for 429/503/5xx/timeouts; False for 400/401/404
+retry.backoff_delay(2)      # seconds to wait before attempt 3 (deterministic)
+```
+
+Or wrap the call and let it retry for you:
+
+```python
+result = retry.call(lambda: client.responses.create(**kwargs), max_attempts=4)
+```
+
+## What it guarantees
+
+- A **fixed, documented** policy: rate limits, overload, 5xx, timeouts and connection errors are retryable; auth, bad-request and not-found are not.
+- A numeric `Retry-After` / `retry-after-ms` header is honoured (capped); HTTP-date headers are ignored because reading them would require the clock.
+- The backoff schedule is deterministic — the same attempt number always yields the same delay, so it's testable.
+
+## What it does not do
+
+- It does **not** sleep or read the clock itself — `classify` and `backoff_delay` are pure; `retry.call` does the waiting, and you can inject the sleeper.
+- It does **not** add jitter from a random source (that would break determinism); jitter, if you want it, is yours to add outside the contract.
+- It is **not** a reimplementation of Tenacity — it's the *decision*, not a general retry engine.
+
+See [`retry`](../../blocks/retry/).
