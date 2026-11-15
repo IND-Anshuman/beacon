@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from typing import Any, Mapping, Optional
 
 from .._api import extract_json, validate_schema
@@ -65,3 +66,26 @@ def parse_structured(
     if model is not None:
         return model.model_validate(data)
     return data
+
+
+def validate_value(
+    value: Any,
+    *,
+    schema: Optional[Mapping[str, Any]] = None,
+    model: Any = None,
+) -> Any:
+    """Validate an already-structured value (not text) and optionally build ``model``.
+
+    For adapters whose framework hands back parsed JSON (a dict/list) rather than
+    raw text. On a schema violation the value is attached as ``.raw`` (JSON) for
+    debugging, mirroring :func:`parse_structured`.
+    """
+    try:
+        if schema is not None:
+            validate_schema(value, schema)
+    except SchemaValidationError as exc:
+        exc.raw = json.dumps(value, default=str)
+        raise
+    if model is not None:
+        return model.model_validate(value)
+    return value

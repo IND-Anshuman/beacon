@@ -16,6 +16,22 @@ lazily, so ``import beacon`` never pulls in LangChain, LlamaIndex, etc.
   ``ModelRetry`` when it is installed
 * :mod:`beacon.integrations.dspy` — ``pip install "llm-beacon[dspy]"`` for the
   adapter; the validator works without DSPy
+* :mod:`beacon.integrations.openai_agents` — no extra dependency (duck-typed);
+  ``pip install "llm-beacon[openai-agents]"`` only to run the Agents SDK
+* :mod:`beacon.integrations.smolagents` — no extra dependency (duck-typed);
+  ``pip install "llm-beacon[smolagents]"`` only to run smolagents
+* :mod:`beacon.integrations.haystack` — ``validate_replies`` is duck-typed; the
+  pipeline component needs ``pip install "llm-beacon[haystack]"``
+* :mod:`beacon.integrations.strands` — no extra dependency (duck-typed);
+  ``pip install "llm-beacon[strands]"`` only to run Strands Agents
+* :mod:`beacon.integrations.autogen` — no extra dependency (duck-typed);
+  ``pip install "llm-beacon[autogen]"`` only to run AutoGen
+* :mod:`beacon.integrations.crewai` — no extra dependency (duck-typed);
+  ``pip install "llm-beacon[crewai]"`` only to run CrewAI
+* :mod:`beacon.integrations.agno` — no extra dependency (duck-typed);
+  ``pip install "llm-beacon[agno]"`` only to run Agno
+* :mod:`beacon.integrations.semantic_kernel` — no extra dependency (duck-typed);
+  ``pip install "llm-beacon[semantic-kernel]"`` only to run Semantic Kernel
 """
 
 from ._common import parse_structured, schema_for
