@@ -1,0 +1,39 @@
+---
+title: Prose instead of JSON
+description: The model wrapped the JSON in a sentence or a code fence and json.loads threw.
+---
+
+## Symptom
+
+You asked for JSON and got JSON — wrapped in prose:
+
+````text
+Sure! Here's the structured result:
+```json
+{"intent": "cancel", "confidence": 0.9}
+```
+Let me know if you need anything else.
+````
+
+`json.loads(reply)` raises `JSONDecodeError: Expecting value: line 1 column 1`.
+
+## Minimal fix
+
+```python
+import beacon
+
+data = beacon.extract_json(reply)
+# {'intent': 'cancel', 'confidence': 0.9}
+```
+
+## What it guarantees
+
+- Finds the JSON in fenced blocks, leading prose, or trailing prose using a [fully specified algorithm](../../blocks/extract-json/) — no model, no heuristics beyond the documented rules.
+- Parses **strictly** (RFC 8259): a reply that merely looks like JSON but is malformed raises with a line/column, rather than returning half-parsed data.
+- Same input → byte-identical output, on every machine, forever.
+
+## What it does not do
+
+- It does **not** repair broken JSON (a trailing comma, a missing brace). For that, see [Trailing comma](../trailing-comma/) and `repair_json`.
+- It does **not** guess when there are several JSON candidates beyond the explicit `select=` rule — you choose `"first"`, `"last"`, `"largest"` or `"only"`.
+- It does **not** validate the shape. Pass `schema=` or follow with [`validate_schema`](../../blocks/validate-schema/) to check fields.

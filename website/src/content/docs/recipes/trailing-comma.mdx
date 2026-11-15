@@ -1,0 +1,39 @@
+---
+title: Trailing comma
+description: The model emitted almost-valid JSON with a trailing comma or a smart quote, and the parser rejected it.
+---
+
+## Symptom
+
+The JSON is one character away from valid:
+
+```text
+{"intent": "cancel", "entities": ["plan", "date",]}
+```
+
+A strict parser (including beacon's `extract_json`) raises `json.trailing_comma`. You want the value, but you also want to **know** it was patched.
+
+## Minimal fix
+
+```python
+import beacon
+
+result = beacon.repair_json('{"intent": "cancel", "entities": ["plan", "date",]}')
+result.value       # {'intent': 'cancel', 'entities': ['plan', 'date']}
+result.repairs     # [RepairEvent(kind='trailing_comma', at=..., detail=...)]
+result.incomplete  # False
+```
+
+## What it guarantees
+
+- A **bounded, documented** set of repairs only: trailing commas, single quotes, unquoted keys, missing/duplicate commas, and closing a truncated tail. No free-form rewriting.
+- Every change is recorded in `result.repairs` — repair is never silent, so you can log it, alert on it, or reject the response.
+- Deterministic: the same broken input always yields the same `value` and the same repair log.
+
+## What it does not do
+
+- It does **not** invent missing values or fix semantically wrong data — only syntax.
+- It is **not** a reason to stop prompting for clean JSON; treat a non-empty `repairs` list as a signal that something upstream is off.
+- For a response that was *cut off* mid-stream rather than mistyped, see [Truncated output](../truncated-output/).
+
+See [`repair_json`](../../blocks/parse-partial/) for the full repair list.

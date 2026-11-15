@@ -1,0 +1,43 @@
+---
+title: Truncated output
+description: The response hit max_tokens and stopped mid-object, so you have half a JSON value.
+---
+
+## Symptom
+
+A streamed or length-capped response ends partway through:
+
+```text
+{"intent": "cancel", "summary": "the customer wants to canc
+```
+
+You need the best value available so far — while knowing it is **not** finished.
+
+## Minimal fix
+
+While streaming, parse the prefix you have:
+
+```python
+import beacon
+
+p = beacon.parse_partial('{"intent": "cancel", "summary": "the customer wants to canc')
+p.value      # {'intent': 'cancel', 'summary': 'the customer wants to canc'}
+p.complete   # False  -> do not act on this as a final answer
+p.consumed   # number of input code points consumed
+```
+
+For a response you already know is final (not still streaming), use `repair_json`, which closes the open containers and records it.
+
+## What it guarantees
+
+- Returns the best value parseable from a **valid prefix**, closing only what truncation left open.
+- `complete` is `False` whenever the input was truncated, so a partial answer can never masquerade as a finished one.
+- Deterministic and total: it never raises and never returns a fragment that looks whole.
+
+## What it does not do
+
+- It does **not** fetch or wait for more tokens — it only interprets what you pass.
+- It does **not** guess the truncated tail's value (the cut-off `"canc…"` stays as the literal text received).
+- It is **not** a repairer of *malformed* JSON; for a typo like a trailing comma, see [Trailing comma](../trailing-comma/).
+
+See [`parse_partial`](../../blocks/parse-partial/).

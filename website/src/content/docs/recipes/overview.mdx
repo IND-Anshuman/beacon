@@ -1,0 +1,36 @@
+---
+title: Recipes
+description: Fixes organized by the symptom you actually see — the error message, not the API.
+---
+
+Most people meet beacon because something broke: `json.loads` threw on a model reply, a tool call came back as a string, a schema error was unreadable. These recipes are organized by **symptom** — the thing you saw — not by block name. Each one is the same four sections:
+
+- **Symptom** — the error or behaviour you actually hit.
+- **Minimal fix** — the smallest change that solves it.
+- **What it guarantees** — what you can now rely on.
+- **What it does not do** — the honest edge, so you know where the block stops.
+
+That last section is deliberate. A boundary block is only trustworthy if you know exactly where its job ends.
+
+## Find your symptom
+
+| You see… | Recipe | Block |
+| --- | --- | --- |
+| Prose or a code fence around the JSON | [Prose instead of JSON](../prose-instead-of-json/) | `extract_json` |
+| `trailing comma` / `Expecting property name` | [Trailing comma](../trailing-comma/) | `repair_json` |
+| Output cut off mid-object | [Truncated output](../truncated-output/) | `parse_partial` |
+| Tool `arguments` is a JSON string | [Tool args came back as a string](../tool-args-as-string/) | `parse_tool_call` |
+| Model called a tool that doesn't exist | [Unknown tool](../unknown-tool/) | `validate_schema` |
+| Unreadable schema-validation error | [Useless schema error](../useless-schema-error/) | `schema_errors` |
+| PII heading into a prompt or log | [PII in the prompt](../pii-in-prompt/) | `redact` |
+| A 429 / overload retry storm | [Retry storm](../retry-storm/) | `retry` |
+| "Output changed and I don't know why" | [Output changed](../output-changed/) | snapshots |
+| Two providers, two different shapes | [Different provider shapes](../different-provider-shapes/) | integrations |
+| Need a strict closed set of intents | [Closed-set intents](../closed-set-intents/) | `validate_schema` |
+| Must prove no PII is left | [Prove no PII left](../prove-no-pii/) | `detect_pii` |
+| Re-sending an identical expensive prompt | [Expensive prompt prefix](../expensive-prompt-prefix/) | `cache_key` |
+| SQL/shell injection in a tool argument | [Injection in a tool arg](../injection-in-tool-arg/) | `scan_arguments` |
+| Need to replay last week's failures | [Replay failures](../replay-failures/) | snapshots |
+| A beacon error code you don't recognize | [Error I don't understand](../error-i-dont-understand/) | `explain_code` |
+
+Every recipe links to the block's full reference for the rest of the options.
