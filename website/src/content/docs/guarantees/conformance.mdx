@@ -1,0 +1,42 @@
+---
+title: Cross-language conformance
+description: One golden corpus; every binding proven byte-identical to it. The determinism moat, made provable as bindings multiply.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+beacon's promise is a **determinism contract**: the same input gives byte-identical output on every machine. As beacon ships to more languages, that claim has to stay *provable* — not asserted. It is, by a single conformance corpus every binding is tested against.
+
+## How it works
+
+A language-neutral **golden corpus** (`tests/conformance/corpus.json`) freezes the canonical output string for a set of cases — one or more per block. Every binding has a runner that asserts its output is **byte-identical to the same golden**:
+
+- the **Python** package (the PyO3 wheels), checked with no Node required;
+- the **JavaScript/WASM** package (`llm-beacon` on npm), run through `tests/js/parity_runner.mjs`.
+
+Both the Python wheels and the wasm are the *same* `beacon-core` Rust, so matching the one golden proves they agree with each other **and** pins the exact bytes — a regression in either language fails the suite. The corpus is regenerated deliberately (like a snapshot) and any change is recorded in the changelog.
+
+```bash
+python tests/conformance/generate.py   # rebuild the golden from the Python package
+python -m pytest tests/test_conformance.py   # assert Python and JS both match it
+python tests/conformance/report.py     # write the determinism report
+```
+
+## Latest determinism report
+
+The report (`tests/conformance/determinism-report.json`) records what was tested, across which languages, with the core version:
+
+| Binding | Package | Cases byte-identical |
+| --- | --- | --- |
+| Python | `llm-beacon` (PyO3 wheels) | **29 / 29** |
+| JavaScript | `llm-beacon` (wasm) | **29 / 29** |
+
+**29 cases across 15 blocks** — `extract_json`, `repair_json`, `parse_partial`, `parse_tool_calls`, `schema_errors`, `normalize`, `hash_content`, `cache_key`, `redact`, `detect_pii`, `template`, `template_variables`, `extract_citations`, `detect_injection`, `scan_arguments` — all **byte-identical** across Python and JavaScript. The report also captures the core version, Unicode version, platform and runtime versions of the run.
+
+<Aside type="note">
+The corpus covers the blocks that exist in `beacon-core` and therefore in every binding. Python-only surfaces built *on top* of the core — the provenance ledger, the streaming engine, the async `aio` wrappers — are specified to reproduce the same hashes/values (their algorithms ride on `hash_content` / `parse_partial`), and gain their own binding runners as those bindings land.
+</Aside>
+
+<Aside type="tip">
+Adding a binding (Go, a JVM package, a C ABI) means adding one runner that feeds it the corpus and compares to the golden — no new expectations to write. That is the point: the corpus is the contract. The **`beacon-ffi`** crate already exposes a stable C ABI over `beacon-core` (byte-identical by construction); native bindings and a C conformance runner build on it next.
+</Aside>

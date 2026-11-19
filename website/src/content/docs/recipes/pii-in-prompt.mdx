@@ -24,6 +24,8 @@ safe = beacon.redact(
 
 Pick a `policy` (`"default"`, `"strict"`, `"secrets"`, `"pii"`) and, for correlation without exposure, a `replacement` template with `{hash}` so the same value always maps to the same token.
 
+Redacting a **stream** (a model response arriving in chunks)? Use [`stream_redact`](../../blocks/streaming/#streaming-redaction) — it guarantees a secret is never emitted across a chunk boundary, and its concatenated output equals `redact` of the whole text.
+
 ## What it guarantees
 
 - Deterministic placeholders from a **documented detector set** (emails, phones, SSNs, cards, API keys, AWS keys, JWTs, bearer tokens, private keys; `strict` adds IPs).

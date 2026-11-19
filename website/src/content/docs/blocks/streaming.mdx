@@ -1,0 +1,88 @@
+---
+title: Streaming
+description: Parse a JSON array as it streams and pull each element the moment it settles — with chunk-boundary invariance.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+[`parse_partial`](../parse-partial/) parses one buffer. `StreamParser` drives it incrementally: feed chunks as they arrive, read the best value so far, and pull **committed** top-level items — array elements, object `(key, value)` members, or a final scalar — the moment each one settles.
+
+```python
+from beacon import stream_json
+
+# chunks arriving from a model's token stream
+for item in stream_json(['[{"id": 1}', ', {"id": 2}, ', '{"id": 3}]']):
+    handle(item)          # {'id': 1}, then {'id': 2}, then {'id': 3}
+```
+
+An item is committed only once no further input can change it — its following delimiter has been seen, or the stream closed. So committed items are final and are emitted exactly once, in order.
+
+## Chunk-boundary invariance
+
+The key guarantee: **the same bytes, split into chunks any way, yield the same committed items and the same final value.** Where the network happens to break the stream never changes the result. It is fuzz-tested over arbitrary JSON and arbitrary splits.
+
+```python
+stream = '[1, 23, 45]'
+list(stream_json([stream]))                    # [1, 23, 45]
+list(stream_json(['[1, ', '2', '3, 45]']))     # [1, 23, 45]  — same
+list(stream_json(list(stream)))                # [1, 23, 45]  — one char at a time, same
+```
+
+## Full control with `StreamParser`
+
+When you need the running value and completeness, not just the items:
+
+```python
+from beacon import StreamParser
+
+parser = StreamParser()
+parser.feed('{"total": 3, "items": [1')   # update.value == {'total': 3, 'items': [1]}
+u = parser.feed(', 2, 3]}')               # u.complete is True
+u.committed                                # (('total', 3), ('items', [1, 2, 3]))
+parser.close()                             # flush a trailing scalar / truncated tail
+```
+
+Each `feed` (and `close`) returns a `StreamUpdate(value, complete, consumed, committed)`. Call `close()` when the stream ends: a bare scalar has no closing delimiter, so it settles only then.
+
+Async — feed a provider's async token stream directly:
+
+```python
+from beacon import aio
+
+async for item in aio.stream_json(response_chunks):   # response_chunks: AsyncIterable[str]
+    handle(item)
+```
+
+## Streaming redaction
+
+`StreamRedactor` (and the `stream_redact` / `aio.stream_redact` generators) redact a text stream with one promise: **a secret is never emitted across a chunk boundary.** Each `feed` returns only the text that is safe to release — the redaction of the buffer up to a point *before* any match that could still be growing — so an email or key split across chunks is held back until it completes and is redacted.
+
+```python
+from beacon import stream_redact
+
+"".join(stream_redact(["my email is al", "ice@example.com now"]))
+# 'my email is [REDACTED:email] now'   — the split address is never leaked
+```
+
+The guarantee is exact: **the concatenation of everything emitted equals `redact` of the whole text**, for any chunking. It takes the same options as [`redact`](../redact/) (`policy`, `replacement`, custom `patterns`/`terms`), plus `max_secret_len` (default 1024) — the longest secret it can hold across a boundary; a longer one (a large PEM block) is reliably redacted only once fully buffered or at `close()`.
+
+## Streaming tool calls
+
+`StreamToolCalls` (and `stream_tool_calls` / `aio.stream_tool_calls`) emit each tool call the moment it finishes parsing — across every format [`parse_tool_call`](../parse-tool-call/) recognizes. A call split across chunks is never emitted half-formed.
+
+```python
+from beacon import stream_tool_calls
+
+for call in stream_tool_calls(response_chunks):
+    dispatch(call["name"], call["arguments"])     # each call, in order, once complete
+```
+
+The yielded calls equal `parse_tool_calls` of the whole text, in order, for any chunking — for a stream in a single format, as a real model emits (`parse_tool_calls` detects one format per text). While the buffer ends in an incomplete call nothing is emitted; the call is released once it finishes. Pass `include_format=True` to tag each with the format it matched.
+
+<Aside type="note">
+Committed items are top-level: an array element or object member commits as a **whole** once the next one begins (its nested structure is fully parsed by then). beacon does not sub-stream inside an element.
+</Aside>
+
+<Aside type="caution">
+A bare top-level number has no terminator — `4` could still become `42` — so scalars commit only at `close()`, never mid-stream. Containers and quoted strings are unambiguous. This is the same strict-JSON-tolerant-of-truncation rule as `parse_partial`: no other repairs, no log.
+</Aside>

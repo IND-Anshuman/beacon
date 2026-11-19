@@ -1,0 +1,46 @@
+---
+title: Show results as they stream in
+description: Render each element of a streaming JSON array the moment it's complete, without re-parsing the whole buffer.
+---
+
+## Symptom
+
+A model streams back a JSON array — search hits, suggestions, rows — and you want to show each item as it arrives. Re-running `json.loads` on every partial chunk throws until the very end, so you either wait for the whole response or write a fragile hand-rolled scanner.
+
+## Minimal fix
+
+Feed the chunks to `stream_json` and iterate the items as they settle:
+
+```python
+from beacon import stream_json
+
+def chunks():
+    for delta in client.stream(...):     # your provider's token deltas
+        yield delta.text
+
+for item in stream_json(chunks()):
+    render(item)                          # each complete element, in order, once
+```
+
+Async streams work the same way:
+
+```python
+from beacon import aio
+
+async for item in aio.stream_json(response_deltas):
+    await render(item)
+```
+
+Need the running value or a completeness flag too? Use `StreamParser` and read `update.value` / `update.complete` on each `feed`.
+
+## What it guarantees
+
+- **Chunk-boundary invariance**: however the network splits the bytes, you get the same items in the same order — fuzz-tested.
+- Each item is emitted **once**, only after it's final (its delimiter has been seen), so you never render a half-parsed element or a value that later changes.
+- Deterministic and local: it drives [`parse_partial`](../../blocks/parse-partial/) incrementally — no model, no network, no new parser.
+
+## What it does not do
+
+- It does **not** repair malformed JSON — it's strict JSON tolerant only of truncation. For trailing commas, single quotes and the like, see [`repair_json`](../../blocks/parse-partial/).
+- It commits **top-level** items; it does not sub-stream the fields inside one element (an element commits as a whole).
+- A bare top-level scalar (a lone number) settles only when the stream closes — it has no delimiter to mark it done.
