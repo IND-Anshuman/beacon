@@ -52,7 +52,17 @@ from .errors import (
     TemplateSyntaxError,
     explain_code,
 )
+from .ledger import Ledger, LedgerRecord, RecordedResult, VerifyReport, verify
 from .retry import RetryAction, RetryDecision, RetryPolicy, RetryReason
+from .streaming import (
+    StreamParser,
+    StreamRedactor,
+    StreamToolCalls,
+    StreamUpdate,
+    stream_json,
+    stream_redact,
+    stream_tool_calls,
+)
 
 __version__: str = _beacon_native.VERSION
 
@@ -103,6 +113,20 @@ __all__ = [
     "Pipeline",
     "PipelineResult",
     "StepRecord",
+    # provenance ledger
+    "Ledger",
+    "LedgerRecord",
+    "RecordedResult",
+    "VerifyReport",
+    "verify",
+    # streaming
+    "StreamParser",
+    "StreamUpdate",
+    "stream_json",
+    "StreamRedactor",
+    "stream_redact",
+    "StreamToolCalls",
+    "stream_tool_calls",
     # errors
     "BeaconError",
     "MalformedOutputError",

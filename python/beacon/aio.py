@@ -18,7 +18,7 @@ its keep when you are already on an event loop.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any, AsyncIterable, AsyncIterator, Iterable, Mapping, Optional
 
 from . import _api, _schema
 from ._api import (
@@ -39,6 +39,9 @@ from ._api import (
     Select,
     ToolCall,
 )
+from .ledger import Ledger, VerifyReport
+from .ledger import verify as _verify
+from .streaming import StreamParser, StreamRedactor, StreamToolCalls
 
 __all__ = [
     "template",
@@ -62,6 +65,10 @@ __all__ = [
     "extract_citations",
     "detect_injection",
     "scan_arguments",
+    "verify",
+    "stream_json",
+    "stream_redact",
+    "stream_tool_calls",
 ]
 
 
@@ -228,3 +235,48 @@ async def detect_injection(text: str, *, policy: InjectionPolicy = "default") ->
 async def scan_arguments(arguments: Any, *, policy: InjectionPolicy = "default") -> list[InjectionFinding]:
     """Async version of :func:`beacon.scan_arguments`."""
     return await asyncio.to_thread(_api.scan_arguments, arguments, policy=policy)
+
+
+async def verify(ledger: Ledger, inputs: Any = None, *, pipeline: Any = None) -> VerifyReport:
+    """Async version of :func:`beacon.verify`. Chain-integrity checks and
+    synchronous-pipeline reproduction run on a worker thread; a pipeline with
+    async blocks must be verified with the synchronous :func:`beacon.verify`
+    after an explicit re-run."""
+    return await asyncio.to_thread(lambda: _verify(ledger, inputs, pipeline=pipeline))
+
+
+async def stream_json(chunks: AsyncIterable[str]) -> AsyncIterator[Any]:
+    """Async :func:`beacon.stream_json`: yield each committed top-level item from
+    an **async** iterable of text chunks (e.g. a provider's token stream). Each
+    parse step runs on a worker thread so the event loop keeps serving."""
+    parser = StreamParser()
+    async for chunk in chunks:
+        for item in (await asyncio.to_thread(parser.feed, chunk)).committed:
+            yield item
+    for item in (await asyncio.to_thread(parser.close)).committed:
+        yield item
+
+
+async def stream_redact(chunks: AsyncIterable[str], **kwargs: Any) -> AsyncIterator[str]:
+    """Async :func:`beacon.stream_redact`: redact an **async** stream of text
+    chunks, yielding safe-to-emit redacted text. The concatenation equals
+    :func:`redact` of the whole input; no secret crosses a chunk boundary."""
+    redactor = StreamRedactor(**kwargs)
+    async for chunk in chunks:
+        piece = await asyncio.to_thread(redactor.feed, chunk)
+        if piece:
+            yield piece
+    tail = await asyncio.to_thread(redactor.close)
+    if tail:
+        yield tail
+
+
+async def stream_tool_calls(chunks: AsyncIterable[str], *, include_format: bool = False) -> AsyncIterator[Any]:
+    """Async :func:`beacon.stream_tool_calls`: yield each tool call from an
+    **async** stream of chunks as it completes."""
+    detector = StreamToolCalls(include_format=include_format)
+    async for chunk in chunks:
+        for call in await asyncio.to_thread(detector.feed, chunk):
+            yield call
+    for call in await asyncio.to_thread(detector.close):
+        yield call
