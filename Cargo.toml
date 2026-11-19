@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/beacon-core", "crates/beacon-python"]
+members = ["crates/beacon-core", "crates/beacon-python", "crates/beacon-ffi"]
 # beacon-wasm targets wasm32 and keeps its own size-tuned [profile.release]
 # (opt-level = "z", panic = "abort", strip). Cargo only honours [profile.*] at
 # the workspace root, so a shared profile would either bloat the Python wheel or

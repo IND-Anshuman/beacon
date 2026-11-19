@@ -1,0 +1,24 @@
+[package]
+name = "beacon-ffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "C ABI over beacon-core: the FFI foundation for native bindings (Go, JVM, C). Deterministic, byte-identical to the Python and wasm bindings."
+readme = "README.md"
+
+[lib]
+name = "beacon_ffi"
+# cdylib/staticlib for C consumers; rlib so the crate's own Rust tests can link it.
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+beacon-core = { path = "../beacon-core" }
+
+# This crate deliberately does NOT inherit [workspace.lints] (which forbids
+# unsafe_code) — an FFI boundary needs `unsafe`. Clippy stays strict.
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

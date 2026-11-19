@@ -29,6 +29,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "beacon-ffi"
+version = "1.1.0"
+dependencies = [
+ "beacon-core",
+]
+
+[[package]]
 name = "beacon-python"
 version = "1.1.0"
 dependencies = [
