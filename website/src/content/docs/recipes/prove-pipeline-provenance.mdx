@@ -1,0 +1,39 @@
+---
+title: Prove what my pipeline did
+description: Keep a tamper-evident record of a run and verify it later, offline.
+---
+
+## Symptom
+
+Someone asks "what exactly did this pipeline do with that input?" — for an audit, an incident, or a compliance review — and all you have is the output. You need a record you can hand over and that anyone can check, without re-calling a model.
+
+## Minimal fix
+
+Record a ledger when you run, and `verify` it later:
+
+```python
+from beacon import Ledger, Pipeline, verify
+
+pipeline = Pipeline([str.strip, str.upper])   # your real, deterministic blocks
+
+rec = pipeline.run_recorded("  hello  ")
+save(rec.ledger.as_dict())                    # store the JSON ledger
+
+# ...later, offline...
+report = verify(Ledger.from_dict(load()), "  hello  ", pipeline=pipeline)
+assert report.ok                              # chain intact AND outputs reproduced
+```
+
+Timestamps, host or a run id go in `rec.ledger.with_meta(...)` — sidecar data that is never hashed, so it can't change the result.
+
+## What it guarantees
+
+- **Tamper-evidence**: the ledger is a hash chain; altering any record fails `verify`, no re-run required.
+- **Reproducibility**: given the pipeline and the input, `verify` re-runs the blocks and confirms every output hash byte-for-byte — no model, no network.
+- Same run → same `root` on every machine, so the fingerprint is stable and shareable.
+
+## What it does not do
+
+- It records **what the deterministic boundary did**, not whether the model was *good* — it is not an eval or scoring framework. Keep the model call in its own block.
+- `verify` proves reproduction by re-running the pipeline you give it; a step whose output isn't JSON-like can't be output-checked (the chain over it still verifies, and the report says so).
+- It is not a signing/PKI system — the chain proves integrity, not *who* produced it. (Signing can wrap it later, outside the deterministic core.)

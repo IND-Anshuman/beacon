@@ -1,0 +1,78 @@
+---
+title: Provenance ledger
+description: Record a tamper-evident ledger of what a pipeline did, and verify it offline — no model, no network.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`run_traced` fingerprints a run. `run_recorded` goes one step further: it emits a **ledger** — a tamper-evident hash chain of every step — and `verify` re-runs the pipeline to **prove** that ledger offline. If a pipeline is deterministic (and beacon's blocks are), you can show exactly what it did with a given input, forever, with no model and no network involved.
+
+```python
+from beacon import Pipeline, verify
+
+pipeline = Pipeline([str.strip, str.upper])
+
+rec = pipeline.run_recorded("  hello  ")
+rec.output              # 'HELLO'
+rec.ledger.root         # '…' a byte-identical fingerprint of the whole run
+
+report = verify(rec.ledger, "  hello  ", pipeline=pipeline)
+bool(report)            # True — chain intact AND every output reproduced
+```
+
+## The ledger
+
+A `Ledger` is a chain of records, one per block. Each record carries the op name, the input hash, the params hash, the output hash, and the hash of the **previous** record — so each commits to the whole history before it. The last record's `record_hash` is the ledger's `root`.
+
+```python
+rec.ledger.as_dict()
+# {
+#   'version': 'v1',
+#   'core_version': '1.0.0',
+#   'root': '…',
+#   'records': [
+#     {'index': 0, 'op': 'str.strip', 'input_hash': '…', 'params_hash': '…',
+#      'output_hash': '…', 'prev_hash': '', 'record_hash': '…'},
+#     {'index': 1, 'op': 'str.upper', ...},
+#   ],
+# }
+```
+
+`as_dict()` / `Ledger.from_dict()` round-trip it to JSON for storage. The hashes come from [`hash_content`](../hash-content/); the chain algorithm is fully specified, so a binding in another language computes the same `root`.
+
+## Verifying
+
+`verify` always checks **chain integrity** — that every record still hashes to its own contents and links to the one before. That alone is offline tamper-evidence: change any recorded hash and verification fails.
+
+```python
+verify(rec.ledger)                         # chain-only: report.reproduced is None
+verify(rec.ledger, inputs, pipeline=pipe)  # also re-runs to confirm every output
+```
+
+`VerifyReport` is truthy when the ledger holds up, and `report.failures` names every problem in order:
+
+```python
+report = verify(rec.ledger, "wrong input", pipeline=pipeline)
+report.ok            # False
+report.reproduced    # False
+report.failures      # ('step 0 (str.strip): input hash differs from the ledger', ...)
+```
+
+## Timestamps and other non-deterministic data
+
+The verified content is a pure function of the inputs, ops and core version. Anything non-reproducible — when it ran, on which host, a run id — goes in `meta`, a sidecar that **no hash covers** and that never affects verification:
+
+```python
+led = rec.ledger.with_meta(run_id="abc123", recorded_at="2026-11-16T09:00:00Z")
+led.root == rec.ledger.root   # True — metadata is outside the chain
+```
+
+Async: `Pipeline.arun_recorded` and `beacon.aio.verify` mirror the sync API.
+
+<Aside type="caution">
+A ledger records **what the deterministic boundary did** — it is not an evaluation of the model. It says nothing about whether the model's output was *good*, only that these blocks, on this input, produced exactly these results. Keep any model call in its own block; the blocks around it are what the ledger proves.
+</Aside>
+
+<Aside type="note">
+`verify` proves reproduction by re-running the pipeline you pass it. A step whose output isn't JSON-like (so its hash is `None`) can't be reproduced-checked; the chain over it still verifies, and the report says so.
+</Aside>
