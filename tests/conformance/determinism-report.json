@@ -1,0 +1,47 @@
+{
+  "report": "beacon cross-language determinism",
+  "generated_at_utc": "2026-11-16T07:30:32Z",
+  "core_version": "1.0.0",
+  "unicode_version": "18.0.0",
+  "corpus_format": "v1",
+  "cases": 29,
+  "blocks_covered": [
+    "cacheKey",
+    "detectInjection",
+    "detectPii",
+    "extractCitations",
+    "extractJson",
+    "hashContent",
+    "normalize",
+    "parsePartial",
+    "parseToolCalls",
+    "redact",
+    "repairJson",
+    "scanArguments",
+    "schemaErrors",
+    "template",
+    "templateVariables"
+  ],
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.14.7 (CPython)",
+  "bindings": [
+    {
+      "language": "python",
+      "package": "llm-beacon",
+      "version": "1.0.0",
+      "matched": 29,
+      "total": 29,
+      "byte_identical": true
+    },
+    {
+      "language": "javascript",
+      "package": "llm-beacon (wasm)",
+      "version": "1.0.0",
+      "runtime": "v24.22.1",
+      "matched": 29,
+      "total": 29,
+      "byte_identical": true
+    }
+  ],
+  "all_byte_identical": true
+}
