@@ -17,9 +17,12 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, Union
 
 from ._api import hash_content
+
+if TYPE_CHECKING:
+    from .ledger import RecordedResult
 
 __all__ = ["Block", "Pipeline", "PipelineResult", "StepRecord"]
 
@@ -152,6 +155,22 @@ class Pipeline(Block):
                 value = await value
             steps.append(StepRecord(i, block.label, in_hash, _safe_hash(value)))
         return PipelineResult(value, tuple(steps))
+
+    def run_recorded(self, *args: Any, **kwargs: Any) -> "RecordedResult":
+        """Run and emit a tamper-evident :class:`~beacon.ledger.Ledger` of the
+        run alongside the output. ``beacon.verify`` re-runs this pipeline to
+        prove the ledger offline."""
+        from .ledger import RecordedResult, build_ledger
+
+        result = self.run_traced(*args, **kwargs)
+        return RecordedResult(result.output, build_ledger(result.steps))
+
+    async def arun_recorded(self, *args: Any, **kwargs: Any) -> "RecordedResult":
+        """Async :meth:`run_recorded`: awaits awaitable block outputs."""
+        from .ledger import RecordedResult, build_ledger
+
+        result = await self.arun_traced(*args, **kwargs)
+        return RecordedResult(result.output, build_ledger(result.steps))
 
     def __repr__(self) -> str:
         return f"Pipeline([{', '.join(b.label for b in self.blocks)}])"
