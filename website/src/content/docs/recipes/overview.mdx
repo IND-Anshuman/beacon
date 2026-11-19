@@ -19,6 +19,7 @@ That last section is deliberate. A boundary block is only trustworthy if you kno
 | Prose or a code fence around the JSON | [Prose instead of JSON](../prose-instead-of-json/) | `extract_json` |
 | `trailing comma` / `Expecting property name` | [Trailing comma](../trailing-comma/) | `repair_json` |
 | Output cut off mid-object | [Truncated output](../truncated-output/) | `parse_partial` |
+| Show array results as they stream in | [Show results as they stream in](../stream-results/) | `stream_json` |
 | Tool `arguments` is a JSON string | [Tool args came back as a string](../tool-args-as-string/) | `parse_tool_call` |
 | Model called a tool that doesn't exist | [Unknown tool](../unknown-tool/) | `validate_schema` |
 | Unreadable schema-validation error | [Useless schema error](../useless-schema-error/) | `schema_errors` |
@@ -31,6 +32,7 @@ That last section is deliberate. A boundary block is only trustworthy if you kno
 | Re-sending an identical expensive prompt | [Expensive prompt prefix](../expensive-prompt-prefix/) | `cache_key` |
 | SQL/shell injection in a tool argument | [Injection in a tool arg](../injection-in-tool-arg/) | `scan_arguments` |
 | Need to replay last week's failures | [Replay failures](../replay-failures/) | snapshots |
+| Must prove/audit what a pipeline did | [Prove what my pipeline did](../prove-pipeline-provenance/) | `run_recorded` / `verify` |
 | A beacon error code you don't recognize | [Error I don't understand](../error-i-dont-understand/) | `explain_code` |
 
 Every recipe links to the block's full reference for the rest of the options.

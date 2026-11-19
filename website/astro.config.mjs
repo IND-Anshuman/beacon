@@ -55,7 +55,7 @@ export default defineConfig({
         },
         {
           label: 'Guarantees',
-          items: ['guarantees/determinism', 'guarantees/errors', 'guarantees/overhead'],
+          items: ['guarantees/determinism', 'guarantees/errors', 'guarantees/overhead', 'guarantees/conformance'],
         },
         {
           label: 'Recipes',
@@ -65,6 +65,7 @@ export default defineConfig({
             'recipes/prose-instead-of-json',
             'recipes/trailing-comma',
             'recipes/truncated-output',
+            'recipes/stream-results',
             'recipes/tool-args-as-string',
             'recipes/unknown-tool',
             'recipes/useless-schema-error',
@@ -77,6 +78,7 @@ export default defineConfig({
             'recipes/expensive-prompt-prefix',
             'recipes/injection-in-tool-arg',
             'recipes/replay-failures',
+            'recipes/prove-pipeline-provenance',
             'recipes/error-i-dont-understand',
           ],
         },
@@ -86,6 +88,7 @@ export default defineConfig({
             'blocks/template',
             'blocks/extract-json',
             'blocks/parse-partial',
+            'blocks/streaming',
             'blocks/parse-tool-call',
             'blocks/validate-schema',
             'blocks/normalize',
@@ -95,6 +98,7 @@ export default defineConfig({
             'blocks/detect-injection',
             'blocks/retry',
             'blocks/pipelines',
+            'blocks/provenance',
           ],
         },
         {

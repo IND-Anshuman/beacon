@@ -8,6 +8,65 @@ releases never change block output, including error messages.
 Each release lists **Behaviour changes** separately. Those are any
 input whose output differs from the previous release.
 
+## [Unreleased] - v2.0 Pillars A, B, C & D (verifiable + streaming + bindings + conformance)
+
+The first v2.0 pillars, and the developer-experience pass. Purely additive —
+no existing block output, error code or message changed. (Version number to be
+assigned by the maintainer; suggested minor bump, e.g. `1.2.0`.)
+
+### Added
+
+- **Provenance ledger** — `Pipeline.run_recorded` / `arun_recorded` emit a
+  tamper-evident `Ledger` (a `hash_content` chain of per-block records), and
+  `beacon.verify` (plus `beacon.aio.verify`) checks it offline: chain integrity
+  always, and full output reproduction when given the pipeline and inputs. No
+  model, no network. New public types: `Ledger`, `LedgerRecord`,
+  `RecordedResult`, `VerifyReport`. Non-deterministic data (timestamps, host)
+  lives in `Ledger.meta`, outside the hashed content. Records what the
+  deterministic boundary did — not an evaluation of the model.
+- **Streaming engine** — `StreamParser` (and the `stream_json` /
+  `beacon.aio.stream_json` generators) drive `parse_partial` incrementally over
+  a growing stream, emitting committed top-level items (array elements, object
+  members, or a final scalar) the moment each settles. The headline property is
+  **chunk-boundary invariance** — the same bytes, split any way, yield the same
+  items and final value — fuzz-tested over arbitrary JSON. New public types:
+  `StreamParser`, `StreamUpdate`.
+- **Streaming redaction** — `StreamRedactor` / `stream_redact` /
+  `beacon.aio.stream_redact` redact a text stream so that a secret is never
+  emitted across a chunk boundary; the concatenated output equals `redact` of
+  the whole text, for any split (fuzz-tested). Holds secrets up to
+  `max_secret_len` (default 1024) across a boundary.
+- **Streaming tool-call detection** — `StreamToolCalls` / `stream_tool_calls` /
+  `beacon.aio.stream_tool_calls` emit each tool call (any recognized format) the
+  moment it finishes parsing; the yielded calls equal `parse_tool_calls` of the
+  whole text, in order, for any chunking (fuzz-tested).
+- **Cross-language conformance** — a single language-neutral golden corpus
+  (`tests/conformance/corpus.json`, 29 cases across 15 blocks) that the Python
+  wheels *and* the JavaScript/wasm package are both asserted byte-identical
+  against, plus a reproducible determinism report
+  (`tests/conformance/report.py`) and a docs page. Regenerate the golden
+  deliberately with `python tests/conformance/generate.py`.
+- **`beacon-ffi` crate** — a stable C ABI over `beacon-core` (all 15
+  cross-language blocks), the FFI foundation for native bindings (Go, JVM, C).
+  Returns beacon's canonical JSON text, byte-identical to the other bindings;
+  thread-local error codes, a `beacon.h` header, and Rust-tested marshalling.
+  Builds to a `cdylib`/`staticlib`.
+- **Error diagnostics** — `BeaconError.explain()` (deterministic cause/fix/
+  context), `.details()` (structured dict), and `beacon.explain_code(code)`.
+- **CLI** — `beacon doctor` (versions + pinned data versions), `beacon explain
+  <code>`, and a global `beacon --explain <command> …`.
+
+### Behaviour changes
+
+None. Additive only.
+
+### Pinned data versions
+
+- Unicode tables: 18.0.0 (`beacon.UNICODE_VERSION`).
+- Canonical hash encoding: v1.
+- Snapshot file format: v1.
+- Ledger format: v1.
+
 ## [1.1.0] - unreleased
 
 The Adoption & Launch phase: more framework adapters, problem-shaped docs and a

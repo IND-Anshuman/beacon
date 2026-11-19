@@ -79,12 +79,69 @@ class Pipeline(Block):
     def __init__(self, blocks: Iterable[Block | Callable], name: str = ""): ...
     def run(self, *args, **kwargs) -> Any: ...
     def run_traced(self, *args, **kwargs) -> PipelineResult: ...
+    def run_recorded(self, *args, **kwargs) -> RecordedResult: ...   # + arun_recorded
+    # async: arun, arun_traced
 
 @dataclass(frozen=True)
 class PipelineResult:
     output: Any
     steps: Sequence[StepRecord]    # index, block, input_hash, output_hash
     def trace(self) -> list[dict]: ...
+```
+
+## Provenance ledger
+
+A tamper-evident hash chain of a pipeline run, verifiable offline. See [Provenance ledger](../../blocks/provenance/).
+
+```python
+rec = pipeline.run_recorded(inputs)        # RecordedResult(output, ledger)
+rec.ledger.root                            # byte-identical fingerprint of the run
+rec.ledger.as_dict() / Ledger.from_dict()  # JSON round-trip
+rec.ledger.with_meta(**kv)                 # attach sidecar data (never hashed)
+
+report = beacon.verify(ledger, inputs=None, *, pipeline=None) -> VerifyReport
+#   chain integrity always; reproduction when a pipeline + inputs are given
+report.ok / report.chain_ok / report.reproduced / report.failures
+# async: beacon.aio.verify(...)
+```
+
+Each `LedgerRecord` is `{index, op, input_hash, params_hash, output_hash, prev_hash, record_hash}`; `core_version` and the `v1` format version are recorded on the ledger. Everything hashed is deterministic — timestamps and host live only in `meta`, outside the chain.
+
+## Streaming
+
+Incremental JSON over a growing stream, built on `parse_partial`, with chunk-boundary invariance. See [Streaming](../../blocks/streaming/).
+
+```python
+for item in beacon.stream_json(chunks):        # Iterable[str] -> committed top-level items
+    ...
+async for item in beacon.aio.stream_json(chunks):  # AsyncIterable[str]
+    ...
+
+class StreamParser:
+    def feed(self, chunk: str) -> StreamUpdate: ...
+    def close(self) -> StreamUpdate: ...        # flush a trailing scalar / truncated tail
+    value: Any; complete: bool; consumed: int
+
+@dataclass(frozen=True)
+class StreamUpdate:
+    value: Any; complete: bool; consumed: int
+    committed: tuple[Any, ...]                   # items settled in this update, each once
+
+# streaming redaction: concatenated output == redact(whole text), for any split
+for piece in beacon.stream_redact(chunks, policy="default", max_secret_len=1024): ...
+async for piece in beacon.aio.stream_redact(chunks): ...
+
+class StreamRedactor:
+    def feed(self, chunk: str) -> str: ...        # text now safe to emit
+    def close(self) -> str: ...                   # flush the tail
+
+# streaming tool-call detection: yielded calls == parse_tool_calls(whole text)
+for call in beacon.stream_tool_calls(chunks, include_format=False): ...
+async for call in beacon.aio.stream_tool_calls(chunks): ...
+
+class StreamToolCalls:
+    def feed(self, chunk: str) -> list[dict]: ...  # calls now complete
+    def close(self) -> list[dict]: ...
 ```
 
 ## Result types
